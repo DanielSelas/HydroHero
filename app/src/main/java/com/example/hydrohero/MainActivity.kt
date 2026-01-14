@@ -30,6 +30,7 @@ import com.example.hydrohero.ui.screens.HomeScreen
 import com.example.hydrohero.ui.screens.RemindersScreen
 import com.example.hydrohero.ui.screens.SettingsScreen
 import com.example.hydrohero.ui.screens.ShopScreen
+import com.example.hydrohero.ui.screens.SubscriptionDialog
 import com.example.hydrohero.ui.theme.*
 import com.example.hydrohero.ui.viewmodel.WaterViewModel
 
@@ -53,7 +54,8 @@ fun HydroHeroApp() {
     val viewModel = remember { WaterViewModel(dataRepository) }
     var showAddWaterDialog by remember { mutableStateOf(false) }
     var showAddReminderDialog by remember { mutableStateOf(false) }
-    
+    var showSubscriptionDialog by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             bottomBar = {
@@ -73,6 +75,9 @@ fun HydroHeroApp() {
                         },
                         onSettingsClick = {
                             navController.navigate(Screen.Settings.route)
+                        },
+                        onSubscriptionClick = {
+                            showSubscriptionDialog = true
                         }
                     )
                 }
@@ -97,12 +102,13 @@ fun HydroHeroApp() {
                             val success = viewModel.purchaseShopItem(item)
                             if (!success && !item.isOwned) {
                                 if (item.isPremium) {
-                                    // Show toast for premium items
+                                    // Show toast for premium items - suggest upgrade
                                     android.widget.Toast.makeText(
                                         context,
-                                        "This is a premium item! 👑",
+                                        "Premium item! Upgrade to unlock 👑",
                                         android.widget.Toast.LENGTH_SHORT
                                     ).show()
+                                    showSubscriptionDialog = true
                                 } else {
                                     // Show toast for insufficient coins
                                     android.widget.Toast.makeText(
@@ -167,16 +173,32 @@ fun HydroHeroApp() {
             )
         }
         
+        if (showSubscriptionDialog) {
+            SubscriptionDialog(
+                userData = viewModel.userData,
+                onDismiss = { showSubscriptionDialog = false },
+                onUpgrade = { premiumType ->
+                    viewModel.upgradeToPremium(premiumType)
+                    showSubscriptionDialog = false
+                    android.widget.Toast.makeText(
+                        context,
+                        "Premium activated! 🎉",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            )
+        }
+        
         CelebrationOverlay(
             show = viewModel.showCelebration,
-            avatarIcon = viewModel.userData.selectedAvatar,
+            effectIcon = viewModel.userData.selectedEffect, // Use effect icon
             onDismiss = { viewModel.dismissCelebration() }
         )
         
         ProgressFeedbackOverlay(
             show = viewModel.showProgressFeedback,
             message = viewModel.progressMessage,
-            avatarIcon = viewModel.userData.selectedAvatar,
+            effectIcon = viewModel.userData.selectedEffect, // Use effect icon
             onDismiss = { viewModel.dismissProgressFeedback() }
         )
         

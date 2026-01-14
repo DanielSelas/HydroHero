@@ -35,7 +35,7 @@ import kotlin.random.Random
 @Composable
 fun CelebrationOverlay(
     show: Boolean,
-    avatarIcon: String,
+    effectIcon: String, // Effect icon to display
     onDismiss: () -> Unit
 ) {
     if (show) {
@@ -121,18 +121,18 @@ fun CelebrationOverlay(
                     label = "alpha"
                 )
                 
-                // Avatar
-                Box(
-                    modifier = Modifier
-                        .size(200.dp)
-                        .scale(scale)
-                        .alpha(alpha)
-                        .clip(RoundedCornerShape(100.dp))
-                        .background(LightBlue),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(avatarIcon, fontSize = 120.sp)
-                }
+                      // Effect icon
+                      Box(
+                          modifier = Modifier
+                              .size(200.dp)
+                              .scale(scale)
+                              .alpha(alpha)
+                              .clip(RoundedCornerShape(100.dp))
+                              .background(LightBlue),
+                          contentAlignment = Alignment.Center
+                      ) {
+                          Text(effectIcon, fontSize = 120.sp)
+                      }
                 
                 // Celebration message
                 Column(
@@ -259,7 +259,7 @@ data class StarAnimationData(
 fun ProgressFeedbackOverlay(
     show: Boolean,
     message: String,
-    avatarIcon: String,
+    effectIcon: String, // Effect icon to display
     onDismiss: () -> Unit
 ) {
     if (show) {
@@ -300,18 +300,18 @@ fun ProgressFeedbackOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Avatar
-                Box(
-                    modifier = Modifier
-                        .size(150.dp)
-                        .scale(scale)
-                        .alpha(alpha)
-                        .clip(RoundedCornerShape(75.dp))
-                        .background(LightBlue),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(avatarIcon, fontSize = 90.sp)
-                }
+                      // Effect icon
+                      Box(
+                          modifier = Modifier
+                              .size(150.dp)
+                              .scale(scale)
+                              .alpha(alpha)
+                              .clip(RoundedCornerShape(75.dp))
+                              .background(LightBlue),
+                          contentAlignment = Alignment.Center
+                      ) {
+                          Text(effectIcon, fontSize = 90.sp)
+                      }
                 
                 // Feedback message
                 Text(

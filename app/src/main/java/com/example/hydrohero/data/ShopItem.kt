@@ -12,6 +12,6 @@ data class ShopItem(
 
 enum class ShopCategory {
     AVATAR,
-    BOTTLE,
+    EFFECT,
     BACKGROUND
 }

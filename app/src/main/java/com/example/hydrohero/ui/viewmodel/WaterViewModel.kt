@@ -36,11 +36,11 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             ShopItem("lion", "Brave Lion", 350, "🦁", false, ShopCategory.AVATAR, true), // Premium
             ShopItem("dragon", "Mystic Dragon", 500, "🐲", false, ShopCategory.AVATAR, true), // Premium
             
-            // Bottles
-            ShopItem("whale", "Whale Spout", 130, "🐋", false, ShopCategory.BOTTLE, false),
-            ShopItem("bottle1", "Classic Bottle", 100, "🍼", false, ShopCategory.BOTTLE, false),
-            ShopItem("bottle2", "Sports Bottle", 150, "🥤", false, ShopCategory.BOTTLE, false),
-            ShopItem("cup", "Magic Cup", 180, "☕", false, ShopCategory.BOTTLE, true), // Premium
+            // Effects
+            ShopItem("whale", "Whale Spout", 130, "🐋", false, ShopCategory.EFFECT, false),
+            ShopItem("bottle1", "Classic Bottle", 100, "🍼", false, ShopCategory.EFFECT, false),
+            ShopItem("bottle2", "Sports Bottle", 150, "🥤", false, ShopCategory.EFFECT, false),
+            ShopItem("cup", "Magic Cup", 180, "☕", false, ShopCategory.EFFECT, true), // Premium
             
             // Backgrounds
             ShopItem("sea", "Deep Blue Sea", 220, "🌊", true, ShopCategory.BACKGROUND, false),
@@ -225,6 +225,20 @@ class WaterViewModel(private val dataRepository: DataRepository) {
         dataRepository.updateSelectedBackground(backgroundId)
     }
     
+    fun setSelectedEffect(effectIcon: String) {
+        userData = userData.copy(selectedEffect = effectIcon)
+        dataRepository.updateSelectedEffect(effectIcon)
+    }
+    
+    fun upgradeToPremium(premiumType: String) {
+        val isPremium = premiumType != "none"
+        userData = userData.copy(
+            isPremium = isPremium,
+            premiumType = premiumType
+        )
+        dataRepository.updatePremiumStatus(isPremium, premiumType)
+    }
+    
     fun purchaseShopItem(item: ShopItem): Boolean {
         // Check if already owned
         if (item.isOwned) {
@@ -239,10 +253,9 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             return true
         }
         
-        // Premium items require premium subscription (for now, just show message)
-        if (item.isPremium) {
-            // TODO: Check premium status - for now, allow purchase with coins
-            // In production, this would check if user has premium subscription
+        // Premium items require premium subscription - block purchase if not premium
+        if (item.isPremium && !userData.isPremium) {
+            return false // Cannot purchase premium items without premium subscription
         }
         
         // Free items (price 0) can be selected without purchase
@@ -281,6 +294,10 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             // If it's a background, select it immediately
             if (item.category == ShopCategory.BACKGROUND) {
                 setSelectedBackground(item.id)
+            }
+            // If it's an effect, select it immediately
+            if (item.category == ShopCategory.EFFECT) {
+                setSelectedEffect(item.icon)
             }
             
             return true

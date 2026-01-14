@@ -254,7 +254,7 @@ fun ShopScreen(
                 ) {
                     CategoryTab("All", selectedCategory == "All", onCategorySelected)
                     CategoryTab("Avatars", selectedCategory == "Avatars", onCategorySelected)
-                    CategoryTab("Bottles", selectedCategory == "Bottles", onCategorySelected)
+                    CategoryTab("Effects", selectedCategory == "Effects", onCategorySelected)
                     CategoryTab("Backgrounds", selectedCategory == "Backgrounds", onCategorySelected)
                 }
             }
@@ -270,11 +270,11 @@ fun ShopScreen(
                         )
                     }
                 }
-                "Bottles" -> {
+                "Effects" -> {
                     item {
                         CategorySection(
-                            title = "Bottles",
-                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.BOTTLE },
+                            title = "Effects",
+                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.EFFECT },
                             onItemClick = onItemClick
                         )
                     }
@@ -302,8 +302,8 @@ fun ShopScreen(
                     }
                     item {
                         CategorySection(
-                            title = "Bottles",
-                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.BOTTLE },
+                            title = "Effects",
+                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.EFFECT },
                             onItemClick = onItemClick
                         )
                     }

@@ -21,6 +21,7 @@ fun HomeScreen(
     userData: UserData,
     onAddWaterClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onSubscriptionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -47,8 +48,42 @@ fun HomeScreen(
                 fontWeight = FontWeight.Bold,
                 color = TextDark
             )
-            IconButton(onClick = onSettingsClick) {
-                Text("⚙️", fontSize = 20.sp)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Subscription status/upgrade button
+                Surface(
+                    onClick = onSubscriptionClick,
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (userData.isPremium) Color(0xFFFFD700) else BackgroundWhite,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, if (userData.isPremium) Color(0xFFFFD700) else BorderLight)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (userData.isPremium) "👑" else "⭐",
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = if (userData.isPremium) {
+                                when (userData.premiumType) {
+                                    "lifetime" -> "Premium"
+                                    else -> "Premium"
+                                }
+                            } else "Upgrade",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (userData.isPremium) TextDark else PrimaryBlue
+                        )
+                    }
+                }
+                IconButton(onClick = onSettingsClick) {
+                    Text("⚙️", fontSize = 20.sp)
+                }
             }
         }
         

@@ -10,7 +10,10 @@ data class UserData(
     var currentIntake: Int = 0, // in ml
     var glassesCount: Int = 0,
     var streak: Int = 0,
-    var coins: Int = 750,
+    var coins: Int = 800,
     var selectedAvatar: String = "💧", // Default avatar emoji
-    var selectedBackground: String = "sea" // Default background ID
+    var selectedBackground: String = "sea", // Default background ID
+    var selectedEffect: String = "💧", // Default effect icon
+    var isPremium: Boolean = false, // Premium subscription status
+    var premiumType: String = "none" // "none", "monthly", "lifetime"
 )
