@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hydro Hero - Visily Style</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #4A90E2;
+            --light-blue: #6BC5F2;
+            --accent-green: #6BCF7F;
+            --bg-light: #F5F7FA;
+            --bg-white: #FFFFFF;
+            --text-dark: #1A1A1A;
+            --text-light: #6B7280;
+            --border-light: #E5E7EB;
+            --card-border: #E0E7FF;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background: var(--bg-white);
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border: 8px solid #1a1a1a;
+        }
+
+        .status-bar {
+            background: transparent;
+            padding: 12px 20px 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 4px;
+            font-size: 14px;
+        }
+
+        .screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-light);
+        }
+
+        .screen.active {
+            display: flex;
+        }
+        
+        .screen-content-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--bg-white);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .header-icon {
+            width: 24px;
+            height: 24px;
+            color: var(--primary-blue);
+            font-size: 20px;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            flex: 1;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: var(--primary-blue);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* Screen 1: Home */
+        .home-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .journey-section {
+            margin-bottom: 24px;
+        }
+
+        .journey-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-align: center;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .journey-card {
+            background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .character-image {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 16px;
+            background: var(--light-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+        }
+
+        .encouragement-btn {
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .progress-circle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 24px 0;
+        }
+
+        .progress-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary-blue) 0deg 225deg, #E5E7EB 225deg 360deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .progress-circle-inner {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--bg-white);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .progress-label {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .add-water-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 24px;
+            cursor: pointer;
+        }
+
+        /* Screen 2: Reminders */
+        .reminders-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 16px;
+        }
+
+        .reminder-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reminder-info {
+            flex: 1;
+        }
+
+        .reminder-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .reminder-desc {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .toggle-switch {
+            width: 48px;
+            height: 28px;
+            background: #D1D5DB;
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary-blue);
+        }
+
+        .toggle-slider {
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(20px);
+        }
+
+        .add-reminder-btn {
+            background: transparent;
+            border: 1px dashed var(--primary-blue);
+            color: var(--primary-blue);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            cursor: pointer;
+        }
+
+        /* Screen 3: Shop */
+        .shop-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .shop-progress {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .shop-progress-text {
+            font-size: 14px;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-tag {
+            background: #FEF3C7;
+            color: #92400E;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary-blue);
+            width: 66%;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .coins-display {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .coins-label {
+            font-size: 14px;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .coins-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .character-preview {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .preview-circle {
+            width: 100px;
+            height: 100px;
+            background: var(--light-blue);
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+
+        .character-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .character-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 12px;
+        }
+
+        .buy-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+        }
+
+        .category-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            color: var(--text-light);
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .category-tab.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .filter-section {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .filter-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+        }
+
+        .filter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .filter-label {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .filter-check {
+            color: var(--primary-blue);
+            font-size: 18px;
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .shop-item {
+            background: var(--bg-white);
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid var(--border-light);
+        }
+
+        .shop-item-image {
+            width: 100%;
+            height: 120px;
+            background: #F3F4F6;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .shop-item-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .shop-item-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 8px;
+        }
+
+        .shop-item-btn {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        .shop-item-btn.buy {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .shop-item-btn.owned {
+            background: #E5E7EB;
+            color: var(--text-light);
+        }
+
+        /* Screen 4: Settings */
+        .settings-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .settings-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .settings-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .settings-card-subtitle {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 16px;
+        }
+
+        .goal-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #F9FAFB;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .goal-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .goal-edit-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item-label {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .export-btn, .reset-btn {
+            background: transparent;
+            border: none;
+            color: var(--primary-blue);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 0;
+        }
+
+        .reset-btn {
+            color: #EF4444;
+        }
+
+        .about-text {
+            font-size: 14px;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        .about-link {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
+            display: block;
+            margin-top: 8px;
+        }
+
+        /* Ad Styles */
+        .ad-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ad-banner::before {
+            content: 'Ad';
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            font-size: 8px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .ad-content {
+            flex: 1;
+        }
+
+        .ad-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .ad-desc {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .ad-image {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-left: 12px;
+        }
+
+        .ad-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ad-banner-bottom {
+            background: #F3F4F6;
+            border-top: 1px solid var(--border-light);
+            padding: 12px;
+            flex-shrink: 0;
+        }
+
+        .ad-banner-bottom-content {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--border-light);
+        }
+
+        .ad-banner-bottom-image {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .ad-banner-bottom-text {
+            flex: 1;
+        }
+
+        .ad-banner-bottom-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 2px;
+        }
+
+        .ad-banner-bottom-desc {
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        .ad-banner-bottom-btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .ad-label {
+            font-size: 10px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .ad-native {
+            background: var(--bg-white);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 12px 0;
+            position: relative;
+        }
+
+        .ad-native::before {
+            content: 'Sponsored';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 10px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .ad-native-content {
+            display: flex;
+            gap: 12px;
+        }
+
+        .ad-native-image {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            flex-shrink: 0;
+        }
+
+        .ad-native-text {
+            flex: 1;
+        }
+
+        .ad-native-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .ad-native-desc {
+            font-size: 13px;
+            color: var(--text-light);
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .ad-native-link {
+            color: var(--primary-blue);
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            background: var(--bg-white);
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0 8px 0;
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .nav-item.active {
+            opacity: 1;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
+
+        .nav-item.active .nav-icon {
+            color: var(--primary-blue);
+        }
+
+        .nav-label {
+            font-size: 10px;
+            color: var(--text-light);
+        }
+
+        .nav-item.active .nav-label {
+            color: var(--primary-blue);
+            font-weight: 600;
+        }
+
+        .screen-label {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary-blue);
+            background: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Screen Container -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(375px, 1fr)); gap: 40px; padding: 40px; max-width: 1600px; margin: 0 auto;">
+        
+        <!-- Screen 1: Home -->
+        <div style="position: relative;">
+            <div class="screen-label">1. Home Screen</div>
+            <div class="phone-container">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">📶 📶 🔋</div>
+                </div>
+                <div class="screen active" id="home-screen">
+                    <div class="header">
+                        <div class="header-icon">💧</div>
+                        <div class="header-title">Home</div>
+                    </div>
+                    <div class="home-content">
+                        <div class="journey-section">
+                            <div class="journey-title">
+                                <span>⚫</span>
+                                <span>Your Hydration Journey</span>
+                            </div>
+                            <div class="journey-card">
+                                <div class="character-image">💧</div>
+                                <button class="encouragement-btn">You're doing great!</button>
+                            </div>
+                        </div>
+                        <div class="progress-circle-container">
+                            <div class="progress-circle">
+                                <div class="progress-circle-inner">
+                                    <div class="progress-value">5/8</div>
+                                    <div class="progress-label">Glasses</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="add-water-btn">
+                            <span>+</span>
+                            <span>Add Water</span>
+                        </button>
+                        
+                        <!-- Ad Banner -->
+                        <div class="ad-banner">
+                            <div class="ad-content">
+                                <div class="ad-title">Stay Healthy with Premium</div>
+                                <div class="ad-desc">Unlock all features</div>
+                            </div>
+                            <div class="ad-image">💎</div>
+                            <button class="ad-close">×</button>
+                        </div>
+                    </div>
+                    <div class="bottom-nav">
+                        <div class="nav-item active">
+                            <div class="nav-icon">🏠</div>
+                            <div class="nav-label">Home</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">🔔</div>
+                            <div class="nav-label">Reminders</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">🛍️</div>
+                            <div class="nav-label">Shop</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">⚙️</div>
+                            <div class="nav-label">Settings</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 2: Reminders -->
+        <div style="position: relative;">
+            <div class="screen-label">2. Reminders Screen</div>
+            <div class="phone-container">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">📶 📶 🔋</div>
+                </div>
+                <div class="screen active" id="reminders-screen">
+                    <div class="header">
+                        <div class="header-icon">💧</div>
+                        <div class="header-title">Reminders</div>
+                    </div>
+                    <div class="reminders-content">
+                        <div>
+                            <div class="section-title">Preset Reminders</div>
+                            <div class="section-subtitle">Gentle nudges to keep you hydrated throughout your day.</div>
+                            
+                            <div class="reminder-card">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">Morning Hydration</div>
+                                    <div class="reminder-desc">Start your day right at 8:00 AM.</div>
+                                </div>
+                                <div class="toggle-switch active">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="reminder-card">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">Midday Boost</div>
+                                    <div class="reminder-desc">A refreshing reminder around 1:00 PM.</div>
+                                </div>
+                                <div class="toggle-switch">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="reminder-card">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">Evening Wind-down</div>
+                                    <div class="reminder-desc">A final sip before bed at 9:00 PM.</div>
+                                </div>
+                                <div class="toggle-switch active">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 32px;">
+                            <div class="section-title">Your Custom Reminders</div>
+                            <div class="section-subtitle">Personalized alerts tailored to your schedule.</div>
+                            
+                            <div class="reminder-card">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">Afternoon Hydration</div>
+                                    <div class="reminder-desc">1:00 PM, Daily.</div>
+                                </div>
+                                <div class="toggle-switch active">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="reminder-card">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">Bedtime Sip</div>
+                                    <div class="reminder-desc">9:30 PM, Weekdays.</div>
+                                </div>
+                                <div class="toggle-switch">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            
+                            <button class="add-reminder-btn">
+                                <span>+</span>
+                                <span>Add Custom Reminder</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Native Ad -->
+                        <div class="ad-label">Advertisement</div>
+                        <div class="ad-native">
+                            <div class="ad-native-content">
+                                <div class="ad-native-image">🏋️</div>
+                                <div class="ad-native-text">
+                                    <div class="ad-native-title">Fitness Tracker Pro</div>
+                                    <div class="ad-native-desc">Track your workouts and stay fit. Download now!</div>
+                                    <a href="#" class="ad-native-link">Learn More →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bottom-nav">
+                        <div class="nav-item">
+                            <div class="nav-icon">🏠</div>
+                            <div class="nav-label">Home</div>
+                        </div>
+                        <div class="nav-item active">
+                            <div class="nav-icon">🔔</div>
+                            <div class="nav-label">Reminders</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">🛍️</div>
+                            <div class="nav-label">Shop</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">⚙️</div>
+                            <div class="nav-label">Settings</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 3: Shop -->
+        <div style="position: relative;">
+            <div class="screen-label">3. Shop Screen</div>
+            <div class="phone-container">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">📶 📶 🔋</div>
+                </div>
+                <div class="screen active" id="shop-screen">
+                    <div class="header">
+                        <div class="header-icon">💧</div>
+                        <div class="header-title">Shop</div>
+                    </div>
+                    <div class="shop-content">
+                        <div class="shop-progress">
+                            <div class="shop-progress-text">
+                                <span>Complete 3 reminders</span>
+                                <span class="progress-tag">In Progress</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-bar-fill"></div>
+                            </div>
+                            <div class="progress-stats">
+                                <span style="font-size: 12px; color: var(--text-light);">2/3</span>
+                                <button style="background: var(--primary-blue); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">Keep Going</button>
+                            </div>
+                            <div style="margin-top: 8px; font-size: 14px; color: var(--text-dark);">$50 Coins</div>
+                        </div>
+                        
+                        <div class="coins-display">
+                            <span class="coins-label">Your Coins:</span>
+                            <span class="coins-value">$750</span>
+                        </div>
+                        
+                        <div class="character-preview">
+                            <div class="preview-circle">💧</div>
+                            <div class="character-name">Water Drop</div>
+                            <div class="character-price">$150</div>
+                            <button class="buy-btn">Buy Now</button>
+                        </div>
+                        
+                        <div class="category-tabs">
+                            <div class="category-tab active">All</div>
+                            <div class="category-tab">Avatars</div>
+                            <div class="category-tab">Bottles</div>
+                            <div class="category-tab">Backgrounds</div>
+                        </div>
+                        
+                        <div class="filter-section">
+                            <div class="filter-title">Filter Categories</div>
+                            <div class="filter-item">
+                                <span class="filter-label">Avatars</span>
+                                <span class="filter-check">✓</span>
+                            </div>
+                            <div class="filter-item">
+                                <span class="filter-label">Bottles</span>
+                                <span class="filter-check">✓</span>
+                            </div>
+                            <div class="filter-item">
+                                <span class="filter-label">Backgrounds</span>
+                                <span class="filter-check">✓</span>
+                            </div>
+                        </div>
+                        
+                        <div class="shop-grid">
+                            <div class="shop-item">
+                                <div class="shop-item-image">🦊</div>
+                                <div class="shop-item-name">Curious Fox</div>
+                                <div class="shop-item-price">$150</div>
+                                <button class="shop-item-btn buy">Buy</button>
+                            </div>
+                            <div class="shop-item">
+                                <div class="shop-item-image">🐻</div>
+                                <div class="shop-item-name">Sleepy Bear</div>
+                                <div class="shop-item-price">$100</div>
+                                <button class="shop-item-btn owned">Owned</button>
+                            </div>
+                            <div class="shop-item">
+                                <div class="shop-item-image">🐰</div>
+                                <div class="shop-item-name">Hopping Bunny</div>
+                                <div class="shop-item-price">$180</div>
+                                <button class="shop-item-btn buy">Buy</button>
+                            </div>
+                            <div class="shop-item">
+                                <div class="shop-item-image">🐋</div>
+                                <div class="shop-item-name">Whale Spout</div>
+                                <div class="shop-item-price">$130</div>
+                                <button class="shop-item-btn buy">Buy</button>
+                            </div>
+                            <div class="shop-item">
+                                <div class="shop-item-image">⭐</div>
+                                <div class="shop-item-name">Starry Night Bg</div>
+                                <div class="shop-item-price">$200</div>
+                                <button class="shop-item-btn buy">Buy</button>
+                            </div>
+                            <div class="shop-item">
+                                <div class="shop-item-image">🌊</div>
+                                <div class="shop-item-name">Deep Blue Sea</div>
+                                <div class="shop-item-price">$220</div>
+                                <button class="shop-item-btn owned">Owned</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Banner Ad -->
+                        <div class="ad-banner" style="margin-top: 24px;">
+                            <div class="ad-content">
+                                <div class="ad-title">Get More Coins!</div>
+                                <div class="ad-desc">Watch ads to earn rewards</div>
+                            </div>
+                            <div class="ad-image">💰</div>
+                            <button class="ad-close">×</button>
+                        </div>
+                    </div>
+                    <div class="ad-banner-bottom">
+                        <div class="ad-banner-bottom-content">
+                            <div class="ad-banner-bottom-image">📱</div>
+                            <div class="ad-banner-bottom-text">
+                                <div class="ad-banner-bottom-title">Download Our Partner App</div>
+                                <div class="ad-banner-bottom-desc">Get exclusive rewards</div>
+                            </div>
+                            <button class="ad-banner-bottom-btn">Install</button>
+                        </div>
+                    </div>
+                    <div class="bottom-nav">
+                        <div class="nav-item">
+                            <div class="nav-icon">🏠</div>
+                            <div class="nav-label">Home</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">🔔</div>
+                            <div class="nav-label">Reminders</div>
+                        </div>
+                        <div class="nav-item active">
+                            <div class="nav-icon">🛍️</div>
+                            <div class="nav-label">Shop</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">⚙️</div>
+                            <div class="nav-label">Settings</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 4: Settings -->
+        <div style="position: relative;">
+            <div class="screen-label">4. Settings Screen</div>
+            <div class="phone-container">
+                <div class="status-bar">
+                    <span>9:41</span>
+                    <div class="status-icons">📶 📶 🔋</div>
+                </div>
+                <div class="screen active" id="settings-screen">
+                    <div class="header">
+                        <button class="back-btn">←</button>
+                        <div class="header-icon">💧</div>
+                        <div class="header-title">Settings</div>
+                        <div style="width: 40px;"></div>
+                    </div>
+                    <div class="settings-content">
+                        <div class="settings-card">
+                            <div class="settings-card-title">Daily Water Goal</div>
+                            <div class="settings-card-subtitle">Set your daily hydration target</div>
+                            <div class="goal-display">
+                                <div class="goal-value">8 Glasses</div>
+                                <button class="goal-edit-btn">Edit</button>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <div class="settings-card-title">Notification Settings</div>
+                            <div class="settings-card-subtitle">Manage how and when you receive reminders</div>
+                            <div class="settings-item">
+                                <span class="settings-item-label">Enable Notifications</span>
+                                <div class="toggle-switch active">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            <div class="settings-item">
+                                <span class="settings-item-label">Sound Alerts</span>
+                                <div class="toggle-switch active">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            <div class="settings-item">
+                                <span class="settings-item-label">Vibration</span>
+                                <div class="toggle-switch">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            <div class="settings-item">
+                                <span class="settings-item-label">Quiet Hours</span>
+                                <div class="toggle-switch">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <div class="settings-card-title">Display Preferences</div>
+                            <div class="settings-card-subtitle">Customize how information is shown</div>
+                            <div class="settings-item">
+                                <span class="settings-item-label">Units</span>
+                                <span style="font-size: 14px; color: var(--text-light);">Glasses</span>
+                            </div>
+                            <div class="settings-item">
+                                <span class="settings-item-label">Theme</span>
+                                <span style="font-size: 14px; color: var(--text-light);">Light</span>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <div class="settings-card-title">Account</div>
+                            <div class="settings-card-subtitle">Manage your account and data</div>
+                            <div class="settings-item">
+                                <span class="settings-item-label">Sync Data</span>
+                                <div class="toggle-switch active">
+                                    <div class="toggle-slider"></div>
+                                </div>
+                            </div>
+                            <div class="settings-item">
+                                <button class="export-btn">Export Data</button>
+                            </div>
+                            <div class="settings-item">
+                                <button class="reset-btn">Reset Progress</button>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-card">
+                            <div class="settings-card-title">About Hydro Hero</div>
+                            <div class="about-text">
+                                <div>v1.0.0</div>
+                                <div style="margin-top: 8px;">Stay hydrated, stay heroic!</div>
+                                <a href="#" class="about-link">Privacy Policy</a>
+                                <a href="#" class="about-link">Terms of Service</a>
+                                <a href="#" class="about-link">Contact Support</a>
+                            </div>
+                        </div>
+                        
+                        <!-- Native Ad -->
+                        <div class="ad-label">Advertisement</div>
+                        <div class="ad-native">
+                            <div class="ad-native-content">
+                                <div class="ad-native-image">🧘</div>
+                                <div class="ad-native-text">
+                                    <div class="ad-native-title">Meditation App</div>
+                                    <div class="ad-native-desc">Find your inner peace. Start your journey today.</div>
+                                    <a href="#" class="ad-native-link">Try Free →</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bottom-nav">
+                        <div class="nav-item">
+                            <div class="nav-icon">🏠</div>
+                            <div class="nav-label">Home</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">🔔</div>
+                            <div class="nav-label">Reminders</div>
+                        </div>
+                        <div class="nav-item">
+                            <div class="nav-icon">🛍️</div>
+                            <div class="nav-label">Shop</div>
+                        </div>
+                        <div class="nav-item active">
+                            <div class="nav-icon">⚙️</div>
+                            <div class="nav-label">Settings</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
