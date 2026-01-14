@@ -36,6 +36,7 @@ fun RemindersScreen(
     onToggleReminder: (String) -> Unit,
     onAddCustomReminder: () -> Unit,
     onDeleteReminder: (String) -> Unit = {},
+    isPremium: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -84,8 +85,54 @@ fun RemindersScreen(
                 text = "Scroll to see all your hydration reminders.",
                 fontSize = 14.sp,
                 color = TextLight,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
+            
+            // Show reminder limit info for free users
+            if (!isPremium) {
+                val remainingSlots = (2 - customReminders.size).coerceAtLeast(0)
+                Surface(
+                    color = if (remainingSlots > 0) LightBlue.copy(alpha = 0.3f) else Color(0xFFFFE5E5),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (remainingSlots > 0) {
+                                    "$remainingSlots custom reminder${if (remainingSlots == 1) "" else "s"} remaining"
+                                } else {
+                                    "Custom reminder limit reached"
+                                },
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextDark
+                            )
+                            Text(
+                                text = "Upgrade to Premium for unlimited reminders",
+                                fontSize = 12.sp,
+                                color = TextLight
+                            )
+                        }
+                        if (remainingSlots == 0) {
+                            Text(
+                                text = "👑",
+                                fontSize = 20.sp
+                            )
+                        }
+                    }
+                }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             // Vertical list of all reminders (preset + custom)
             val allReminders = presetReminders + customReminders
@@ -110,32 +157,59 @@ fun RemindersScreen(
                     }
                 }
                 
-                // Add Custom Reminder Card at the end
-                item {
-                    AddReminderCard(
-                        onClick = onAddCustomReminder
-                    )
-                }
+                      // Add Custom Reminder Card at the end (only if limit not reached)
+                      if (isPremium || customReminders.size < 2) {
+                          item {
+                              AddReminderCard(
+                                  onClick = onAddCustomReminder
+                              )
+                          }
+                      }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Add Custom Reminder Button (also available below carousel)
-            Button(
-                onClick = onAddCustomReminder,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryBlue
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "+ Add Your Own Reminder",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-            }
+                  // Add Custom Reminder Button (only if limit not reached)
+                  if (isPremium || customReminders.size < 2) {
+                      Button(
+                          onClick = onAddCustomReminder,
+                          modifier = Modifier.fillMaxWidth(),
+                          colors = ButtonDefaults.buttonColors(
+                              containerColor = PrimaryBlue
+                          ),
+                          shape = RoundedCornerShape(12.dp)
+                      ) {
+                          Text(
+                              text = "+ Add Your Own Reminder",
+                              fontSize = 16.sp,
+                              fontWeight = FontWeight.SemiBold,
+                              modifier = Modifier.padding(vertical = 4.dp)
+                          )
+                      }
+                  } else {
+                      // Show upgrade button when limit reached
+                      Button(
+                          onClick = onAddCustomReminder, // This will show upgrade prompt
+                          modifier = Modifier.fillMaxWidth(),
+                          colors = ButtonDefaults.buttonColors(
+                              containerColor = Color(0xFFFFD700)
+                          ),
+                          shape = RoundedCornerShape(12.dp)
+                      ) {
+                          Row(
+                              horizontalArrangement = Arrangement.spacedBy(8.dp),
+                              verticalAlignment = Alignment.CenterVertically
+                          ) {
+                              Text("👑", fontSize = 18.sp)
+                              Text(
+                                  text = "Upgrade to Premium for Unlimited Reminders",
+                                  fontSize = 16.sp,
+                                  fontWeight = FontWeight.SemiBold,
+                                  modifier = Modifier.padding(vertical = 4.dp)
+                              )
+                          }
+                      }
+                  }
         }
     }
 }

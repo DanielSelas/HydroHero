@@ -87,9 +87,15 @@ fun HydroHeroApp() {
                         customReminders = viewModel.customReminders,
                         onToggleReminder = { id -> viewModel.toggleReminder(id) },
                         onAddCustomReminder = {
-                            showAddReminderDialog = true
+                            if (viewModel.canAddCustomReminder()) {
+                                showAddReminderDialog = true
+                            } else {
+                                // Show upgrade prompt if limit reached
+                                showSubscriptionDialog = true
+                            }
                         },
-                        onDeleteReminder = { id -> viewModel.deleteCustomReminder(id) }
+                        onDeleteReminder = { id -> viewModel.deleteCustomReminder(id) },
+                        isPremium = viewModel.userData.isPremium
                     )
                 }
                 composable(Screen.Shop.route) {
@@ -168,7 +174,17 @@ fun HydroHeroApp() {
             AddReminderDialog(
                 onDismiss = { showAddReminderDialog = false },
                 onAddReminder = { title, description, time ->
-                    viewModel.addCustomReminder(title, description, time)
+                    val success = viewModel.addCustomReminder(title, description, time)
+                    if (!success) {
+                        // Limit reached, show upgrade prompt
+                        showAddReminderDialog = false
+                        showSubscriptionDialog = true
+                        android.widget.Toast.makeText(
+                            context,
+                            "Custom reminder limit reached! Upgrade to Premium for unlimited reminders 👑",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             )
         }

@@ -369,7 +369,14 @@ class WaterViewModel(private val dataRepository: DataRepository) {
         }
     }
     
-    fun addCustomReminder(title: String, description: String, time: String) {
+    fun addCustomReminder(title: String, description: String, time: String): Boolean {
+        // Check limit: free users can only have 2 custom reminders, premium users have unlimited
+        val maxCustomReminders = if (userData.isPremium) Int.MAX_VALUE else 2
+        
+        if (customReminders.size >= maxCustomReminders) {
+            return false // Limit reached
+        }
+        
         val newId = "custom_${System.currentTimeMillis()}"
         val newReminder = Reminder(
             id = newId,
@@ -380,6 +387,12 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             isPreset = false
         )
         customReminders = customReminders + newReminder
+        return true
+    }
+    
+    fun canAddCustomReminder(): Boolean {
+        val maxCustomReminders = if (userData.isPremium) Int.MAX_VALUE else 2
+        return customReminders.size < maxCustomReminders
     }
     
     fun deleteCustomReminder(id: String) {
