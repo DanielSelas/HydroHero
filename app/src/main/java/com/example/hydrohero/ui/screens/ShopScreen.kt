@@ -31,6 +31,7 @@ fun ShopScreen(
     selectedCategory: String = "All",
     onCategorySelected: (String) -> Unit,
     onItemClick: (ShopItem) -> Unit,
+    onSettingsClick: () -> Unit,
     reminderCompletions: Int = 0,
     reminderRewardClaimed: Boolean = false,
     onClaimReward: () -> Unit = {},
@@ -60,7 +61,9 @@ fun ShopScreen(
                 fontWeight = FontWeight.Bold,
                 color = TextDark
             )
-            Spacer(modifier = Modifier.width(40.dp))
+            IconButton(onClick = onSettingsClick) {
+                Text("⚙️", fontSize = 20.sp)
+            }
         }
 
         // Content - Scrollable with LazyColumn
@@ -268,6 +271,7 @@ fun ShopScreen(
                         CategorySection(
                             title = "Avatars",
                             items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.AVATAR },
+                            userData = userData,
                             onItemClick = onItemClick
                         )
                     }
@@ -277,6 +281,7 @@ fun ShopScreen(
                         CategorySection(
                             title = "Effects",
                             items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.EFFECT },
+                            userData = userData,
                             onItemClick = onItemClick
                         )
                     }
@@ -286,6 +291,7 @@ fun ShopScreen(
                         CategorySection(
                             title = "Backgrounds",
                             items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.BACKGROUND },
+                            userData = userData,
                             onItemClick = onItemClick
                         )
                     }
@@ -296,6 +302,7 @@ fun ShopScreen(
                         CategorySection(
                             title = "Avatars",
                             items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.AVATAR },
+                            userData = userData,
                             onItemClick = onItemClick
                         )
                     }
@@ -306,6 +313,7 @@ fun ShopScreen(
                         CategorySection(
                             title = "Effects",
                             items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.EFFECT },
+                            userData = userData,
                             onItemClick = onItemClick
                         )
                     }
@@ -316,6 +324,7 @@ fun ShopScreen(
                         CategorySection(
                             title = "Backgrounds",
                             items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.BACKGROUND },
+                            userData = userData,
                             onItemClick = onItemClick
                         )
                     }
@@ -354,6 +363,7 @@ fun CategoryTab(
 fun CategorySection(
     title: String,
     items: List<ShopItem>,
+    userData: UserData,
     onItemClick: (ShopItem) -> Unit
 ) {
     Column {
@@ -372,7 +382,7 @@ fun CategorySection(
             ) {
                 rowItems.forEach { item ->
                     Box(modifier = Modifier.weight(1f)) {
-                        ShopItemCard(item, onItemClick)
+                        ShopItemCard(item = item, userData = userData, onClick = onItemClick)
                     }
                 }
                 // Add spacer if odd number of items
@@ -388,13 +398,20 @@ fun CategorySection(
 @Composable
 fun ShopItemCard(
     item: ShopItem,
+    userData: UserData,
     onClick: (ShopItem) -> Unit
 ) {
+    val isSelected = when (item.category) {
+        com.example.hydrohero.data.ShopCategory.AVATAR -> item.icon == userData.selectedAvatar
+        com.example.hydrohero.data.ShopCategory.BACKGROUND -> item.id == userData.selectedBackground
+        com.example.hydrohero.data.ShopCategory.EFFECT -> item.icon == userData.selectedEffect
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, BorderLight, RoundedCornerShape(12.dp)),
+            .border(2.dp, if (isSelected) PrimaryBlue else BorderLight, RoundedCornerShape(12.dp)),
         colors = CardDefaults.cardColors(containerColor = BackgroundWhite),
         onClick = { onClick(item) }
     ) {
@@ -449,8 +466,11 @@ fun ShopItemCard(
             Button(
                 onClick = { onClick(item) },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !isSelected,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = when {
+                        isSelected -> AccentGreen
+                        item.isPremium && !userData.isPremium && !item.isOwned -> Color(0xFFFFD700)
                         item.isOwned -> BorderLight
                         item.price == 0 -> AccentGreen
                         else -> PrimaryBlue
@@ -460,13 +480,17 @@ fun ShopItemCard(
             ) {
                 Text(
                     text = when {
-                        item.isOwned -> if (item.category == com.example.hydrohero.data.ShopCategory.AVATAR) "Select" else "Owned"
+                        isSelected -> "Selected"
+                        item.isPremium && !userData.isPremium && !item.isOwned -> "Premium"
+                        item.isOwned -> "Select"
                         item.price == 0 -> "Free"
                         else -> "Buy"
                     },
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = when {
+                        isSelected -> BackgroundWhite
+                        item.isPremium && !userData.isPremium && !item.isOwned -> TextDark
                         item.isOwned -> TextLight
                         item.price == 0 -> BackgroundWhite
                         else -> BackgroundWhite

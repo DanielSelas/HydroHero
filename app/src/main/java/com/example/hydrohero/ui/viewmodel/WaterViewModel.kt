@@ -8,6 +8,7 @@ import com.example.hydrohero.data.Reminder
 import com.example.hydrohero.data.ShopCategory
 import com.example.hydrohero.data.ShopItem
 import com.example.hydrohero.data.UserData
+import com.example.hydrohero.data.WaterEntry
 import com.example.hydrohero.notifications.ReminderScheduler
 
 class WaterViewModel(
@@ -55,6 +56,14 @@ class WaterViewModel(
         private set
     
     var reminderRewardClaimed by mutableStateOf(false)
+        private set
+
+    // Daily progress log (prototype: resets when app restarts)
+    var waterEntries by mutableStateOf<List<WaterEntry>>(emptyList())
+        private set
+
+    // Reminder UX: explicit "Done" state (separate from enable/scheduling)
+    var completedReminderIds by mutableStateOf<Set<String>>(emptySet())
         private set
     
     fun updateDailyGoal(newGoal: Int) {
@@ -175,6 +184,9 @@ class WaterViewModel(
             currentIntake = newIntake,
             glassesCount = newGlassesCount
         )
+
+        // Add to today's log
+        waterEntries = waterEntries + WaterEntry(amount = amount)
         
         // Save to persistence
         dataRepository.updateIntake(newIntake, newGlassesCount)
@@ -235,6 +247,13 @@ class WaterViewModel(
         reminderCompletions = reminderMilestoneStage.coerceIn(0, 3)
         dataRepository.saveReminderCompletions(reminderCompletions)
 
+        // Auto-check preset reminders as "Done" based on stage (custom reminders remain manual)
+        val presetIdsToMarkDone = presetReminders
+            .take(reminderMilestoneStage.coerceIn(0, presetReminders.size))
+            .map { it.id }
+            .toSet()
+        completedReminderIds = completedReminderIds + presetIdsToMarkDone
+
         // Toast message referencing the 1st/2nd/3rd preset reminder
         val reminderName = when (reminderMilestoneStage) {
             1 -> presetReminders.getOrNull(0)?.title ?: "Reminder 1"
@@ -248,6 +267,14 @@ class WaterViewModel(
         // Auto-award reward once when reaching 3/3
         if (reminderCompletions >= 3 && !reminderRewardClaimed) {
             awardReminderChallengeCoins()
+        }
+    }
+
+    fun toggleReminderDone(id: String) {
+        completedReminderIds = if (completedReminderIds.contains(id)) {
+            completedReminderIds - id
+        } else {
+            completedReminderIds + id
         }
     }
 
@@ -384,8 +411,6 @@ class WaterViewModel(
                 val updated = reminder.copy(isEnabled = newEnabled)
 
                 if (newEnabled) {
-                    // If enabling a reminder, increment completion count (for demo/prototype)
-                    incrementReminderCompletion()
                     if (notificationsEnabled) reminderScheduler.scheduleDaily(updated)
                 } else {
                     reminderScheduler.cancel(reminder.id)
@@ -401,7 +426,6 @@ class WaterViewModel(
                 val updated = reminder.copy(isEnabled = newEnabled)
 
                 if (newEnabled) {
-                    incrementReminderCompletion()
                     if (notificationsEnabled) reminderScheduler.scheduleDaily(updated)
                 } else {
                     reminderScheduler.cancel(reminder.id)

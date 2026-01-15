@@ -34,6 +34,7 @@ import com.example.hydrohero.ui.components.CoinsEarnedOverlay
 import com.example.hydrohero.ui.components.BannerAd
 import com.example.hydrohero.ui.screens.AddWaterDialog
 import com.example.hydrohero.ui.screens.AddReminderDialog
+import com.example.hydrohero.ui.screens.DailyProgressScreen
 import com.example.hydrohero.ui.screens.HomeScreen
 import com.example.hydrohero.ui.screens.RemindersScreen
 import com.example.hydrohero.ui.screens.SettingsScreen
@@ -222,7 +223,19 @@ fun HydroHeroApp() {
                         },
                         onSubscriptionClick = {
                             showSubscriptionDialog = true
+                        },
+                        onDailyProgressClick = {
+                            navController.navigate(Screen.DailyProgress.route)
                         }
+                    )
+                }
+                composable(Screen.DailyProgress.route) {
+                    DailyProgressScreen(
+                        dailyGoal = viewModel.userData.dailyGoal,
+                        currentIntake = viewModel.userData.currentIntake,
+                        entries = viewModel.waterEntries,
+                        onBackClick = { navController.popBackStack() },
+                        onSettingsClick = { navController.navigate(Screen.Settings.route) }
                     )
                 }
                 composable(Screen.Reminders.route) {
@@ -230,6 +243,8 @@ fun HydroHeroApp() {
                         presetReminders = viewModel.presetReminders,
                         customReminders = viewModel.customReminders,
                         onToggleReminder = { id -> viewModel.toggleReminder(id) },
+                        completedReminderIds = viewModel.completedReminderIds,
+                        onToggleDone = { id -> viewModel.toggleReminderDone(id) },
                         onAddCustomReminder = {
                             if (viewModel.canAddCustomReminder()) {
                                 showAddReminderDialog = true
@@ -291,6 +306,7 @@ fun HydroHeroApp() {
                                 }
                             }
                         },
+                        onSettingsClick = { navController.navigate(Screen.Settings.route) },
                         isPremium = viewModel.userData.isPremium
                     )
                 }
@@ -301,8 +317,21 @@ fun HydroHeroApp() {
                         selectedCategory = viewModel.selectedCategory,
                         onCategorySelected = { category -> viewModel.selectCategory(category) },
                         onItemClick = { item ->
+                            val wasOwned = item.isOwned
                             val success = viewModel.purchaseShopItem(item)
-                            if (!success && !item.isOwned) {
+                            if (success) {
+                                val actionText = if (wasOwned) "Selected" else "Purchased"
+                                val categoryText = when (item.category) {
+                                    com.example.hydrohero.data.ShopCategory.AVATAR -> "avatar"
+                                    com.example.hydrohero.data.ShopCategory.BACKGROUND -> "background"
+                                    com.example.hydrohero.data.ShopCategory.EFFECT -> "effect"
+                                }
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "$actionText $categoryText: ${item.name}",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            } else if (!item.isOwned) {
                                 if (item.isPremium) {
                                     // Show toast for premium items - suggest upgrade
                                     android.widget.Toast.makeText(
@@ -321,6 +350,7 @@ fun HydroHeroApp() {
                                 }
                             }
                         },
+                        onSettingsClick = { navController.navigate(Screen.Settings.route) },
                         reminderCompletions = viewModel.reminderCompletions,
                         reminderRewardClaimed = viewModel.reminderRewardClaimed,
                         onClaimReward = { viewModel.claimReminderReward() }
@@ -454,7 +484,7 @@ fun BottomNavigationBar(navController: NavHostController) {
         Screen.Home,
         Screen.Reminders,
         Screen.Shop,
-        Screen.Settings
+        Screen.DailyProgress
     )
     
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -478,6 +508,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                         Text(
                             when (screen) {
                                 is Screen.Home -> "🏠"
+                                is Screen.DailyProgress -> "📈"
                                 is Screen.Reminders -> "🔔"
                                 is Screen.Shop -> "🛍️"
                                 is Screen.Settings -> "⚙️"
@@ -490,6 +521,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                     Text(
                         when (screen) {
                             is Screen.Home -> "Home"
+                            is Screen.DailyProgress -> "Progress"
                             is Screen.Reminders -> "Reminders"
                             is Screen.Shop -> "Shop"
                             is Screen.Settings -> "Settings"

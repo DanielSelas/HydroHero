@@ -24,6 +24,7 @@ fun HomeScreen(
     onAddWaterClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSubscriptionClick: () -> Unit,
+    onDailyProgressClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -177,6 +178,14 @@ fun HomeScreen(
                         progressPercentage >= 25 -> "Keep going!"
                         else -> "Let's start!"
                     }
+
+                          val nextMilestoneHint = when {
+                              progressPercentage < 25f -> "Next: 25% → Start Your Day ✅"
+                              progressPercentage < 50f -> "Next: 50% → Midday Check ✅"
+                              progressPercentage < 75f -> "Next: 75% → Evening Wind-down ✅"
+                              progressPercentage < 100f -> "Next: 100% → Daily Goal 🎉"
+                              else -> "All milestones completed today ✅"
+                          }
                     
                     Box(
                         modifier = Modifier
@@ -204,6 +213,14 @@ fun HomeScreen(
                             fontWeight = FontWeight.SemiBold
                         )
                     }
+
+                          Spacer(modifier = Modifier.height(12.dp))
+
+                          Text(
+                              text = nextMilestoneHint,
+                              fontSize = 12.sp,
+                              color = TextLight
+                          )
                 }
             }
 
@@ -248,6 +265,23 @@ fun HomeScreen(
                     }
             }
 
+            // Celebration layer (persistent badge after confetti ends)
+            if (progress >= 1f) {
+                Spacer(modifier = Modifier.height(14.dp))
+                Surface(
+                    color = AccentGreen.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(999.dp)
+                ) {
+                    Text(
+                        text = "Goal Complete ✅",
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        color = AccentGreen,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Add Water Button
@@ -270,6 +304,22 @@ fun HomeScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = onDailyProgressClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryBlue)
+            ) {
+                Text(
+                    text = "View Daily Progress",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
             // (Banner ad is shown globally in MainActivity above the bottom nav)
         }

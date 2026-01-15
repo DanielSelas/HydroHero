@@ -34,8 +34,11 @@ fun RemindersScreen(
     presetReminders: List<Reminder>,
     customReminders: List<Reminder>,
     onToggleReminder: (String) -> Unit,
+    completedReminderIds: Set<String>,
+    onToggleDone: (String) -> Unit,
     onAddCustomReminder: () -> Unit,
     onDeleteReminder: (String) -> Unit = {},
+    onSettingsClick: () -> Unit,
     isPremium: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -63,7 +66,9 @@ fun RemindersScreen(
                 fontWeight = FontWeight.Bold,
                 color = TextDark
             )
-            Spacer(modifier = Modifier.width(40.dp))
+            IconButton(onClick = onSettingsClick) {
+                Text("⚙️", fontSize = 20.sp)
+            }
         }
 
         // Content
@@ -140,17 +145,21 @@ fun RemindersScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(allReminders) { reminder ->
+                items(allReminders, key = { it.id }) { reminder ->
                     if (reminder.isPreset) {
                         // Preset reminders - no swipe to delete
                         ReminderCarouselCard(
                             reminder = reminder,
+                            isDone = completedReminderIds.contains(reminder.id),
+                            onToggleDone = { onToggleDone(reminder.id) },
                             onToggle = { onToggleReminder(reminder.id) }
                         )
                     } else {
                         // Custom reminders - swipe to delete
                         SwipeToDeleteReminder(
                             reminder = reminder,
+                            isDone = completedReminderIds.contains(reminder.id),
+                            onToggleDone = { onToggleDone(reminder.id) },
                             onToggle = { onToggleReminder(reminder.id) },
                             onDelete = { onDeleteReminder(reminder.id) }
                         )
@@ -219,6 +228,8 @@ fun RemindersScreen(
 @Composable
 fun ReminderCarouselCard(
     reminder: Reminder,
+    isDone: Boolean,
+    onToggleDone: () -> Unit,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -260,6 +271,20 @@ fun ReminderCarouselCard(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryBlue
+                    )
+                }
+
+                Surface(
+                    onClick = onToggleDone,
+                    color = if (isDone) AccentGreen.copy(alpha = 0.18f) else LightBlue,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = if (isDone) "Done ✅" else "Mark done",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isDone) AccentGreen else TextDark,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                     )
                 }
             }
@@ -342,6 +367,8 @@ fun AddReminderCard(
 @Composable
 fun SwipeToDeleteReminder(
     reminder: Reminder,
+    isDone: Boolean,
+    onToggleDone: () -> Unit,
     onToggle: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -397,6 +424,8 @@ fun SwipeToDeleteReminder(
         // Reminder card (swipeable)
         ReminderCarouselCard(
             reminder = reminder,
+            isDone = isDone,
+            onToggleDone = onToggleDone,
             onToggle = onToggle,
             modifier = Modifier
                 .offset(x = animatedOffset.dp)
