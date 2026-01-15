@@ -14,12 +14,13 @@
 </div>
 
 ---
+<div align="center">
 
 ### 🎥 App Demo
 
-https://github.com/user-attachments/assets/532ab844-f5e4-4b02-8224-72b4b4bc9f47
+<video src="https://github.com/user-attachments/assets/532ab844-f5e4-4b02-8224-72b4b4bc9f47" controls="controls" width="300"></video>
 
-
+</div>
 ---
 
 ## 📱 Features & Screenshots
