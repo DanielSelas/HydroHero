@@ -41,18 +41,22 @@ class DataRepository(context: Context) {
                 .apply()
         }
         
-        // Always reset intake, streak, coins, owned items, and premium status on app start (for testing)
+        // Always reset prototype state on app start (for testing)
         prefs.edit()
             .putString(KEY_LAST_DATE, today)
             .putInt(KEY_CURRENT_INTAKE, 0)
             .putInt(KEY_GLASSES_COUNT, 0)
             .putInt(KEY_STREAK, 0)
             .putBoolean(KEY_GOAL_COMPLETED_TODAY, false)
+            .putInt(KEY_REMINDER_COMPLETIONS, 0)
+            .putBoolean(KEY_REMINDER_REWARD_CLAIMED, false)
             .putInt(KEY_COINS, 800) // Reset to 800 coins
-            .putStringSet(KEY_OWNED_ITEMS, setOf("water", "bear", "sea")) // Reset to default owned items
+            .putStringSet(KEY_OWNED_ITEMS, setOf("water", "none")) // Reset to only default items
             .putBoolean(KEY_IS_PREMIUM, false) // Reset premium status
             .putString(KEY_PREMIUM_TYPE, "none") // Reset premium type
             .putString(KEY_SELECTED_EFFECT, "💧") // Reset effect to default
+            .putString(KEY_SELECTED_AVATAR, "💧") // Reset avatar to default
+            .putString(KEY_SELECTED_BACKGROUND, "none") // Reset background to none
             .apply()
         
         return UserData(
@@ -62,7 +66,7 @@ class DataRepository(context: Context) {
             streak = 0, // Always start at 0
             coins = 800, // Always reset to 800
             selectedAvatar = prefs.getString(KEY_SELECTED_AVATAR, "💧") ?: "💧",
-            selectedBackground = prefs.getString(KEY_SELECTED_BACKGROUND, "sea") ?: "sea",
+            selectedBackground = prefs.getString(KEY_SELECTED_BACKGROUND, "none") ?: "none",
             selectedEffect = prefs.getString(KEY_SELECTED_EFFECT, "💧") ?: "💧",
             isPremium = prefs.getBoolean(KEY_IS_PREMIUM, false),
             premiumType = prefs.getString(KEY_PREMIUM_TYPE, "none") ?: "none"
@@ -159,7 +163,7 @@ class DataRepository(context: Context) {
     }
 
     fun getOwnedItemIds(): Set<String> {
-        return prefs.getStringSet(KEY_OWNED_ITEMS, setOf("water", "bear", "sea")) ?: setOf("water", "bear", "sea")
+        return prefs.getStringSet(KEY_OWNED_ITEMS, setOf("water", "none")) ?: setOf("water", "none")
     }
 
     fun saveOwnedItemIds(itemIds: List<String>) {

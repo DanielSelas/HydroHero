@@ -8,25 +8,22 @@ import com.example.hydrohero.data.Reminder
 import com.example.hydrohero.data.ShopCategory
 import com.example.hydrohero.data.ShopItem
 import com.example.hydrohero.data.UserData
+import com.example.hydrohero.notifications.ReminderScheduler
 
-class WaterViewModel(private val dataRepository: DataRepository) {
-    var userData by mutableStateOf(
-        UserData(
-            dailyGoal = 2000,
-            currentIntake = 0,
-            glassesCount = 0,
-            streak = 0,
-            coins = 750,
-            selectedAvatar = "💧"
-        )
-    )
+class WaterViewModel(
+    private val dataRepository: DataRepository,
+    private val reminderScheduler: ReminderScheduler
+) {
+    // Don't call getUserData() here because it has side-effects (prototype resets).
+    // We'll load it once in init.
+    var userData by mutableStateOf(UserData())
         private set
     
     var shopItems by mutableStateOf(
         listOf(
             // Avatars
             ShopItem("water", "Water Drop", 0, "💧", true, ShopCategory.AVATAR, false), // Free default
-            ShopItem("bear", "Sleepy Bear", 100, "🐻", true, ShopCategory.AVATAR, false),
+            ShopItem("bear", "Sleepy Bear", 100, "🐻", false, ShopCategory.AVATAR, false),
             ShopItem("fox", "Curious Fox", 150, "🦊", false, ShopCategory.AVATAR, false),
             ShopItem("bunny", "Hopping Bunny", 180, "🐰", false, ShopCategory.AVATAR, false),
             ShopItem("panda", "Cute Panda", 200, "🐼", false, ShopCategory.AVATAR, false),
@@ -43,7 +40,8 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             ShopItem("cup", "Magic Cup", 180, "☕", false, ShopCategory.EFFECT, true), // Premium
             
             // Backgrounds
-            ShopItem("sea", "Deep Blue Sea", 220, "🌊", true, ShopCategory.BACKGROUND, false),
+            ShopItem("none", "No Background", 0, "⚪", true, ShopCategory.BACKGROUND, false), // Free default
+            ShopItem("sea", "Deep Blue Sea", 220, "🌊", false, ShopCategory.BACKGROUND, false),
             ShopItem("stars", "Starry Night", 200, "⭐", false, ShopCategory.BACKGROUND, false),
             ShopItem("rainbow", "Rainbow Sky", 250, "🌈", false, ShopCategory.BACKGROUND, true), // Premium
             ShopItem("sunset", "Sunset View", 280, "🌅", false, ShopCategory.BACKGROUND, true), // Premium
@@ -58,16 +56,6 @@ class WaterViewModel(private val dataRepository: DataRepository) {
     
     var reminderRewardClaimed by mutableStateOf(false)
         private set
-    
-    init {
-        // Load user data from persistence
-        userData = dataRepository.getUserData()
-        // Load reminder completion data
-        reminderCompletions = dataRepository.getReminderCompletions()
-        reminderRewardClaimed = dataRepository.getReminderRewardClaimed()
-        // Load owned shop items from persistence
-        loadOwnedShopItems()
-    }
     
     fun updateDailyGoal(newGoal: Int) {
         // Recalculate goal completion status based on new goal
@@ -148,9 +136,28 @@ class WaterViewModel(private val dataRepository: DataRepository) {
     
     var coinsEarnedAmount by mutableStateOf(0)
         private set
+
+    var coinsEarnedSubtitle by mutableStateOf("")
+        private set
+
+    // Mock "Complete 3 reminders" based on hydration milestones:
+    // 25% -> 1/3, 50% -> 2/3, 75% -> 3/3
+    var reminderMilestoneStage by mutableStateOf(0)
+        private set
+
+    // One-shot toast event for milestone completion
+    var reminderMilestoneToastMessage by mutableStateOf("")
+        private set
+    var reminderMilestoneToastEvent by mutableStateOf(0)
+        private set
+
+    // Ads: trigger an interstitial after completing daily goal (handled in UI layer; only shown for free users)
+    var showGoalPopupAd by mutableStateOf(false)
+        private set
     
     fun dismissCoinsEarned() {
         showCoinsEarned = false
+        coinsEarnedSubtitle = ""
     }
 
     fun addWater(amount: Int) {
@@ -171,6 +178,9 @@ class WaterViewModel(private val dataRepository: DataRepository) {
         
         // Save to persistence
         dataRepository.updateIntake(newIntake, newGlassesCount)
+
+        // Mock reminder completion milestones based on hydration progress
+        handleReminderMilestones(progressPercentage)
         
         // Award coins and update streak when goal is reached (only once per day)
         if (!wasGoalReached && isGoalReached) {
@@ -191,9 +201,11 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             // Show coins earned feedback
             coinsEarnedAmount = coinsEarned
             showCoinsEarned = true
+            coinsEarnedSubtitle = "Daily goal completed!"
             
             showProgressFeedback = false // Cancel any progress feedback
             showCelebration = true
+            showGoalPopupAd = true
         } else if (!isGoalReached) {
             // Show progress feedback for milestones (only if not at goal)
             val message = when {
@@ -205,6 +217,44 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             progressMessage = message
             showProgressFeedback = true
         }
+    }
+
+    private fun handleReminderMilestones(progressPercentage: Float) {
+        val targetStage = when {
+            progressPercentage >= 75f -> 3
+            progressPercentage >= 50f -> 2
+            progressPercentage >= 25f -> 1
+            else -> 0
+        }
+
+        if (targetStage <= reminderMilestoneStage) return
+
+        reminderMilestoneStage = targetStage
+
+        // Set progress directly to match stage (1..3)
+        reminderCompletions = reminderMilestoneStage.coerceIn(0, 3)
+        dataRepository.saveReminderCompletions(reminderCompletions)
+
+        // Toast message referencing the 1st/2nd/3rd preset reminder
+        val reminderName = when (reminderMilestoneStage) {
+            1 -> presetReminders.getOrNull(0)?.title ?: "Reminder 1"
+            2 -> presetReminders.getOrNull(1)?.title ?: "Reminder 2"
+            3 -> presetReminders.getOrNull(2)?.title ?: "Reminder 3"
+            else -> "Reminder"
+        }
+        reminderMilestoneToastMessage = "✅ Reminder completed: $reminderName"
+        reminderMilestoneToastEvent++
+
+        // Auto-award reward once when reaching 3/3
+        if (reminderCompletions >= 3 && !reminderRewardClaimed) {
+            awardReminderChallengeCoins()
+        }
+    }
+
+    // (Manual reminder progress removed; driven by hydration milestones now)
+
+    fun consumeGoalPopupAd() {
+        showGoalPopupAd = false
     }
     
     fun dismissCelebration() {
@@ -250,6 +300,10 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             if (item.category == ShopCategory.BACKGROUND) {
                 setSelectedBackground(item.id)
             }
+            // If it's an effect, select it
+            if (item.category == ShopCategory.EFFECT) {
+                setSelectedEffect(item.icon)
+            }
             return true
         }
         
@@ -265,6 +319,9 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             }
             if (item.category == ShopCategory.BACKGROUND) {
                 setSelectedBackground(item.id)
+            }
+            if (item.category == ShopCategory.EFFECT) {
+                setSelectedEffect(item.icon)
             }
             return true
         }
@@ -311,11 +368,7 @@ class WaterViewModel(private val dataRepository: DataRepository) {
         // For now, we'll keep the default owned items
         val ownedItemIds = dataRepository.getOwnedItemIds()
         shopItems = shopItems.map { item ->
-            if (ownedItemIds.contains(item.id)) {
-                item.copy(isOwned = true)
-            } else {
-                item
-            }
+            item.copy(isOwned = ownedItemIds.contains(item.id))
         }
     }
     
@@ -328,11 +381,16 @@ class WaterViewModel(private val dataRepository: DataRepository) {
         presetReminders = presetReminders.map { reminder ->
             if (reminder.id == id) {
                 val newEnabled = !reminder.isEnabled
-                // If enabling a reminder, increment completion count (for demo/prototype)
-                if (newEnabled && !reminder.isEnabled) {
+                val updated = reminder.copy(isEnabled = newEnabled)
+
+                if (newEnabled) {
+                    // If enabling a reminder, increment completion count (for demo/prototype)
                     incrementReminderCompletion()
+                    if (notificationsEnabled) reminderScheduler.scheduleDaily(updated)
+                } else {
+                    reminderScheduler.cancel(reminder.id)
                 }
-                reminder.copy(isEnabled = newEnabled)
+                updated
             } else {
                 reminder
             }
@@ -340,11 +398,15 @@ class WaterViewModel(private val dataRepository: DataRepository) {
         customReminders = customReminders.map { reminder ->
             if (reminder.id == id) {
                 val newEnabled = !reminder.isEnabled
-                // If enabling a reminder, increment completion count (for demo/prototype)
-                if (newEnabled && !reminder.isEnabled) {
+                val updated = reminder.copy(isEnabled = newEnabled)
+
+                if (newEnabled) {
                     incrementReminderCompletion()
+                    if (notificationsEnabled) reminderScheduler.scheduleDaily(updated)
+                } else {
+                    reminderScheduler.cancel(reminder.id)
                 }
-                reminder.copy(isEnabled = newEnabled)
+                updated
             } else {
                 reminder
             }
@@ -355,18 +417,31 @@ class WaterViewModel(private val dataRepository: DataRepository) {
         if (reminderCompletions < 3) {
             reminderCompletions++
             dataRepository.saveReminderCompletions(reminderCompletions)
+            if (reminderCompletions >= 3 && !reminderRewardClaimed) {
+                // Auto-award reward once when reaching 3/3
+                awardReminderChallengeCoins()
+            }
         }
     }
     
     fun claimReminderReward() {
         if (reminderCompletions >= 3 && !reminderRewardClaimed) {
-            val coinsEarned = 50
-            val newCoins = userData.coins + coinsEarned
-            userData = userData.copy(coins = newCoins)
-            dataRepository.updateCoins(newCoins)
-            reminderRewardClaimed = true
-            dataRepository.saveReminderRewardClaimed(true)
+            awardReminderChallengeCoins()
         }
+    }
+
+    private fun awardReminderChallengeCoins() {
+        val coinsEarned = 50
+        val newCoins = userData.coins + coinsEarned
+        userData = userData.copy(coins = newCoins)
+        dataRepository.updateCoins(newCoins)
+
+        reminderRewardClaimed = true
+        dataRepository.saveReminderRewardClaimed(true)
+
+        coinsEarnedAmount = coinsEarned
+        coinsEarnedSubtitle = "3 reminders completed!"
+        showCoinsEarned = true
     }
     
     fun addCustomReminder(title: String, description: String, time: String): Boolean {
@@ -387,6 +462,9 @@ class WaterViewModel(private val dataRepository: DataRepository) {
             isPreset = false
         )
         customReminders = customReminders + newReminder
+        if (notificationsEnabled && newReminder.isEnabled) {
+            reminderScheduler.scheduleDaily(newReminder)
+        }
         return true
     }
     
@@ -396,6 +474,7 @@ class WaterViewModel(private val dataRepository: DataRepository) {
     }
     
     fun deleteCustomReminder(id: String) {
+        reminderScheduler.cancel(id)
         customReminders = customReminders.filter { it.id != id }
     }
 
@@ -417,8 +496,35 @@ class WaterViewModel(private val dataRepository: DataRepository) {
     var syncEnabled by mutableStateOf(true)
         private set
 
+    init {
+        // Load user data from persistence
+        userData = dataRepository.getUserData()
+        // Load reminder completion data
+        reminderCompletions = dataRepository.getReminderCompletions()
+        reminderRewardClaimed = dataRepository.getReminderRewardClaimed()
+        // Load owned shop items from persistence
+        loadOwnedShopItems()
+
+        // Now that reminders + notification toggles are initialized, we can sync schedules safely
+        syncReminderSchedules()
+    }
+
     fun toggleNotifications() {
-        notificationsEnabled = !notificationsEnabled
+        updateNotificationsEnabled(!notificationsEnabled)
+    }
+
+    fun updateNotificationsEnabled(enabled: Boolean) {
+        notificationsEnabled = enabled
+        syncReminderSchedules()
+    }
+
+    private fun syncReminderSchedules() {
+        val all = presetReminders + customReminders
+        if (notificationsEnabled) {
+            all.filter { it.isEnabled }.forEach { reminderScheduler.scheduleDaily(it) }
+        } else {
+            all.forEach { reminderScheduler.cancel(it.id) }
+        }
     }
 
     fun toggleSound() {

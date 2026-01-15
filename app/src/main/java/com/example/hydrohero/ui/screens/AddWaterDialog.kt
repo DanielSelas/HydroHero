@@ -59,6 +59,8 @@ fun AddWaterDialog(
         ) {
             Column(
                 modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .imePadding()
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -141,70 +143,68 @@ fun AddWaterDialog(
                             color = TextDark,
                             modifier = Modifier.padding(bottom = 10.dp)
                         )
-                        val isValidAmount = customAmount.toIntOrNull() != null && customAmount.toIntOrNull()!! > 0
-                        
-                        Row(
+                        val amountInt = customAmount.toIntOrNull()
+                        val isValidAmount = amountInt != null && amountInt > 0
+
+                        OutlinedTextField(
+                            value = customAmount,
+                            onValueChange = { customAmount = it },
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            OutlinedTextField(
-                                value = customAmount,
-                                onValueChange = { customAmount = it },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { 
-                                    Text(
-                                        "Enter amount", 
-                                        color = TextLight,
-                                        fontSize = 16.sp
-                                    ) 
-                                },
-                                singleLine = true,
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = PrimaryBlue,
-                                    unfocusedBorderColor = BorderLight,
-                                    focusedTextColor = Color(0xFF000000),
-                                    unfocusedTextColor = Color(0xFF000000),
-                                    focusedPlaceholderColor = TextLight,
-                                    unfocusedPlaceholderColor = TextLight,
-                                    cursorColor = PrimaryBlue
-                                ),
-                                keyboardOptions = KeyboardOptions(
-                                    keyboardType = KeyboardType.Number
-                                ),
-                                textStyle = androidx.compose.ui.text.TextStyle(
-                                    fontSize = 18.sp,
-                                    color = Color(0xFF000000)
-                                )
-                            )
-                            Button(
-                                onClick = {
-                                    val amount = customAmount.toIntOrNull()
-                                    if (amount != null && amount > 0) {
-                                        addWaterWithFeedback(amount)
-                                        customAmount = ""
-                                    }
-                                },
-                                modifier = Modifier
-                                    .defaultMinSize(minWidth = 80.dp, minHeight = 48.dp)
-                                    .alpha(if (isValidAmount) 1f else 0.1f),
-                                enabled = isValidAmount,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = PrimaryBlue,
-                                    contentColor = BackgroundWhite,
-                                    disabledContainerColor = PrimaryBlue.copy(alpha = 0.1f),
-                                    disabledContentColor = BackgroundWhite.copy(alpha = 0.1f)
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
+                            placeholder = {
                                 Text(
-                                    "Add",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = BackgroundWhite
+                                    "Enter amount",
+                                    color = TextLight,
+                                    fontSize = 16.sp
                                 )
-                            }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryBlue,
+                                unfocusedBorderColor = BorderLight,
+                                focusedTextColor = Color(0xFF000000),
+                                unfocusedTextColor = Color(0xFF000000),
+                                focusedPlaceholderColor = TextLight,
+                                unfocusedPlaceholderColor = TextLight,
+                                cursorColor = PrimaryBlue
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number
+                            ),
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                fontSize = 18.sp,
+                                color = Color(0xFF000000)
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Always-visible button (disabled until amount is valid)
+                        Button(
+                            onClick = {
+                                if (isValidAmount) {
+                                    addWaterWithFeedback(amountInt!!)
+                                    customAmount = ""
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            enabled = isValidAmount,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryBlue,
+                                contentColor = BackgroundWhite,
+                                disabledContainerColor = PrimaryBlue.copy(alpha = 0.35f),
+                                disabledContentColor = BackgroundWhite.copy(alpha = 0.9f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Add Custom Amount",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BackgroundWhite
+                            )
                         }
                     }
                 }

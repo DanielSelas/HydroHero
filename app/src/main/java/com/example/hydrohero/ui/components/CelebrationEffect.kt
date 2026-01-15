@@ -330,6 +330,7 @@ fun ProgressFeedbackOverlay(
 fun CoinsEarnedOverlay(
     show: Boolean,
     amount: Int,
+    subtitle: String,
     onDismiss: () -> Unit
 ) {
     if (show) {
@@ -385,7 +386,7 @@ fun CoinsEarnedOverlay(
                     color = Color(0xFFFFD700)
                 )
                 Text(
-                    text = "Goal Completed!",
+                    text = subtitle,
                     fontSize = 18.sp,
                     color = BackgroundWhite
                 )

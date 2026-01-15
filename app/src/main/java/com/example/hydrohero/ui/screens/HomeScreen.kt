@@ -2,7 +2,9 @@ package com.example.hydrohero.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -131,12 +133,15 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(20.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp)
+                // Extra padding so the bottom button never sits behind the global ad + bottom nav
+                .padding(bottom = 120.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Journey Section
             Text(
-                text = "⚫ Your Hydration Journey",
+                text = "Your Hydration Journey",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextDark,
@@ -266,50 +271,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Ad Banner
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color(0xFF667eea),
-                                Color(0xFF764ba2)
-                            )
-                        )
-                    )
-                    .padding(12.dp, 16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Stay Healthy with Premium",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = BackgroundWhite
-                        )
-                        Text(
-                            text = "Unlock all features",
-                            fontSize = 12.sp,
-                            color = BackgroundWhite.copy(alpha = 0.9f)
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(BackgroundWhite.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("💎", fontSize = 32.sp)
-                    }
-                }
-            }
+            // (Banner ad is shown globally in MainActivity above the bottom nav)
         }
     }
 }
@@ -317,6 +279,10 @@ fun HomeScreen(
 @Composable
 fun getBackgroundColors(backgroundId: String): List<Color> {
     return when (backgroundId) {
+        "none" -> listOf(
+            Color(0xFFFFFFFF),
+            Color(0xFFFFFFFF)
+        )
         "sea" -> listOf(
             Color(0xFFE0F2FE), // Light blue
             Color(0xFFBAE6FD)  // Lighter blue

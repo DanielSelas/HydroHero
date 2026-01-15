@@ -1,9 +1,13 @@
 package com.example.hydrohero
 
+import android.app.Activity
 import android.os.Bundle
+import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
@@ -14,16 +18,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.hydrohero.data.DataRepository
+import com.example.hydrohero.notifications.NotificationChannels
+import com.example.hydrohero.notifications.ReminderScheduler
 import com.example.hydrohero.ui.navigation.Screen
 import com.example.hydrohero.ui.components.CelebrationOverlay
 import com.example.hydrohero.ui.components.ProgressFeedbackOverlay
 import com.example.hydrohero.ui.components.CoinsEarnedOverlay
+import com.example.hydrohero.ui.components.BannerAd
 import com.example.hydrohero.ui.screens.AddWaterDialog
 import com.example.hydrohero.ui.screens.AddReminderDialog
 import com.example.hydrohero.ui.screens.HomeScreen
@@ -33,6 +41,14 @@ import com.example.hydrohero.ui.screens.ShopScreen
 import com.example.hydrohero.ui.screens.SubscriptionDialog
 import com.example.hydrohero.ui.theme.*
 import com.example.hydrohero.ui.viewmodel.WaterViewModel
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.rewarded.RewardItem
+import com.google.android.gms.ads.rewarded.RewardedAd
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,15 +67,143 @@ fun HydroHeroApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
     val dataRepository = remember { DataRepository(context) }
-    val viewModel = remember { WaterViewModel(dataRepository) }
+    val reminderScheduler = remember { ReminderScheduler(context) }
+    val viewModel = remember { WaterViewModel(dataRepository, reminderScheduler) }
     var showAddWaterDialog by remember { mutableStateOf(false) }
     var showAddReminderDialog by remember { mutableStateOf(false) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
 
+    val activity = context as? Activity
+
+    // Interstitial (test unit id)
+    val interstitialUnitId = "ca-app-pub-3940256099942544/1033173712"
+    var interstitialAd by remember { mutableStateOf<InterstitialAd?>(null) }
+
+    // Rewarded (test unit id)
+    val rewardedUnitId = "ca-app-pub-3940256099942544/5224354917"
+    var rewardedAd by remember { mutableStateOf<RewardedAd?>(null) }
+    var pendingDeleteReminderId by remember { mutableStateOf<String?>(null) }
+
+    // Initialize notification channel + AdMob
+    LaunchedEffect(Unit) {
+        NotificationChannels.ensureCreated(context)
+        MobileAds.initialize(context)
+    }
+
+    // Load ads (only needed for free users)
+    LaunchedEffect(viewModel.userData.isPremium) {
+        if (viewModel.userData.isPremium) {
+            interstitialAd = null
+            rewardedAd = null
+            return@LaunchedEffect
+        }
+
+        InterstitialAd.load(
+            context,
+            interstitialUnitId,
+            AdRequest.Builder().build(),
+            object : InterstitialAdLoadCallback() {
+                override fun onAdLoaded(ad: InterstitialAd) {
+                    interstitialAd = ad
+                }
+
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    interstitialAd = null
+                }
+            }
+        )
+
+        RewardedAd.load(
+            context,
+            rewardedUnitId,
+            AdRequest.Builder().build(),
+            object : RewardedAdLoadCallback() {
+                override fun onAdLoaded(ad: RewardedAd) {
+                    rewardedAd = ad
+                }
+
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    rewardedAd = null
+                }
+            }
+        )
+    }
+
+    // Show interstitial when daily goal completed (free users only)
+    LaunchedEffect(viewModel.showGoalPopupAd, viewModel.userData.isPremium, interstitialAd) {
+        if (viewModel.showGoalPopupAd && !viewModel.userData.isPremium && activity != null && interstitialAd != null) {
+            interstitialAd?.show(activity)
+            // Consume event and reload for next time
+            viewModel.consumeGoalPopupAd()
+            interstitialAd = null
+            InterstitialAd.load(
+                context,
+                interstitialUnitId,
+                AdRequest.Builder().build(),
+                object : InterstitialAdLoadCallback() {
+                    override fun onAdLoaded(ad: InterstitialAd) {
+                        interstitialAd = ad
+                    }
+
+                    override fun onAdFailedToLoad(error: LoadAdError) {
+                        interstitialAd = null
+                    }
+                }
+            )
+        }
+    }
+
+    // Android 13+ notification permission
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        viewModel.updateNotificationsEnabled(granted)
+        if (!granted) {
+            android.widget.Toast.makeText(
+                context,
+                "Notifications permission denied. Reminders won't notify.",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    // Keep notifications disabled if permission is missing on Android 13+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= 33) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            if (!granted) {
+                viewModel.updateNotificationsEnabled(false)
+            }
+        }
+    }
+
+    // Mock reminder completion toasts (driven by hydration milestones 25/50/75%)
+    LaunchedEffect(viewModel.reminderMilestoneToastEvent) {
+        if (viewModel.reminderMilestoneToastEvent > 0) {
+            android.widget.Toast.makeText(
+                context,
+                viewModel.reminderMilestoneToastMessage,
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             bottomBar = {
-                BottomNavigationBar(navController = navController)
+                Column {
+                    // Global banner ad (hidden for premium)
+                    if (!viewModel.userData.isPremium) {
+                        BannerAd(
+                            adUnitId = "ca-app-pub-3940256099942544/6300978111",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    BottomNavigationBar(navController = navController)
+                }
             }
         ) { paddingValues ->
             NavHost(
@@ -94,7 +238,59 @@ fun HydroHeroApp() {
                                 showSubscriptionDialog = true
                             }
                         },
-                        onDeleteReminder = { id -> viewModel.deleteCustomReminder(id) },
+                        onDeleteReminder = { id ->
+                            if (viewModel.userData.isPremium) {
+                                viewModel.deleteCustomReminder(id)
+                            } else {
+                                // Free users: watch rewarded video to delete
+                                if (activity == null) return@RemindersScreen
+                                if (rewardedAd == null) {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        "Ad not ready yet. Try again in a moment.",
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
+                                    // Try to reload
+                                    RewardedAd.load(
+                                        context,
+                                        rewardedUnitId,
+                                        AdRequest.Builder().build(),
+                                        object : RewardedAdLoadCallback() {
+                                            override fun onAdLoaded(ad: RewardedAd) {
+                                                rewardedAd = ad
+                                            }
+
+                                            override fun onAdFailedToLoad(error: LoadAdError) {
+                                                rewardedAd = null
+                                            }
+                                        }
+                                    )
+                                } else {
+                                    pendingDeleteReminderId = id
+                                    val adToShow = rewardedAd
+                                    rewardedAd = null
+                                    adToShow?.show(activity) { _: RewardItem ->
+                                        pendingDeleteReminderId?.let { viewModel.deleteCustomReminder(it) }
+                                        pendingDeleteReminderId = null
+                                    }
+                                    // Reload for next time
+                                    RewardedAd.load(
+                                        context,
+                                        rewardedUnitId,
+                                        AdRequest.Builder().build(),
+                                        object : RewardedAdLoadCallback() {
+                                            override fun onAdLoaded(ad: RewardedAd) {
+                                                rewardedAd = ad
+                                            }
+
+                                            override fun onAdFailedToLoad(error: LoadAdError) {
+                                                rewardedAd = null
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        },
                         isPremium = viewModel.userData.isPremium
                     )
                 }
@@ -144,7 +340,22 @@ fun HydroHeroApp() {
                         onGoalChange = { newGoal ->
                             viewModel.updateDailyGoal(newGoal)
                         },
-                        onToggleNotifications = { viewModel.toggleNotifications() },
+                        onToggleNotifications = {
+                            val enabling = !viewModel.notificationsEnabled
+                            if (enabling && Build.VERSION.SDK_INT >= 33) {
+                                val granted = ContextCompat.checkSelfPermission(
+                                    context,
+                                    android.Manifest.permission.POST_NOTIFICATIONS
+                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                if (!granted) {
+                                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    viewModel.updateNotificationsEnabled(true)
+                                }
+                            } else {
+                                viewModel.toggleNotifications()
+                            }
+                        },
                         onToggleSound = { viewModel.toggleSound() },
                         onToggleVibration = { viewModel.toggleVibration() },
                         onToggleQuietHours = { viewModel.toggleQuietHours() },
@@ -202,6 +413,16 @@ fun HydroHeroApp() {
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                 }
+                ,
+                onCancelMonthly = {
+                    viewModel.upgradeToPremium("none")
+                    showSubscriptionDialog = false
+                    android.widget.Toast.makeText(
+                        context,
+                        "Monthly subscription cancelled. Back to Free plan.",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
             )
         }
         
@@ -221,6 +442,7 @@ fun HydroHeroApp() {
         CoinsEarnedOverlay(
             show = viewModel.showCoinsEarned,
             amount = viewModel.coinsEarnedAmount,
+            subtitle = viewModel.coinsEarnedSubtitle.ifBlank { "Nice!" },
             onDismiss = { viewModel.dismissCoinsEarned() }
         )
     }
@@ -240,13 +462,17 @@ fun BottomNavigationBar(navController: NavHostController) {
     
     NavigationBar(
         containerColor = BackgroundWhite,
-        modifier = Modifier.height(72.dp)
+        windowInsets = NavigationBarDefaults.windowInsets,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(76.dp)
+            .padding(horizontal = 6.dp)
     ) {
         items.forEach { screen ->
             NavigationBarItem(
                 icon = {
                     Box(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(28.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -256,7 +482,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                                 is Screen.Shop -> "🛍️"
                                 is Screen.Settings -> "⚙️"
                             },
-                            fontSize = 22.sp
+                            fontSize = 20.sp
                         )
                     }
                 },

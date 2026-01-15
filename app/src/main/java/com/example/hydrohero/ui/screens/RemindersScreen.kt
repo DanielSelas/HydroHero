@@ -208,6 +208,8 @@ fun RemindersScreen(
                                   modifier = Modifier.padding(vertical = 4.dp)
                               )
                           }
+
+                  // (Banner ad is shown globally in MainActivity above the bottom nav)
                       }
                   }
         }

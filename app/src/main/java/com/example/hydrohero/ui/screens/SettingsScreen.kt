@@ -279,6 +279,8 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            // (Banner ad is shown globally in MainActivity above the bottom nav)
         }
     }
 }

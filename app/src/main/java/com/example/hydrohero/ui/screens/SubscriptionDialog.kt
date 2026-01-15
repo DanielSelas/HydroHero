@@ -3,6 +3,7 @@ package com.example.hydrohero.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,129 +23,154 @@ import com.example.hydrohero.ui.theme.*
 fun SubscriptionDialog(
     userData: UserData,
     onDismiss: () -> Unit,
-    onUpgrade: (String) -> Unit // "monthly" or "lifetime"
+    onUpgrade: (String) -> Unit, // "monthly" or "lifetime"
+    onCancelMonthly: () -> Unit = {}
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight(),
+                .fillMaxHeight(0.9f),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = BackgroundWhite)
         ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
-                Text(
-                    text = if (userData.isPremium) "👑 Premium Member" else "⭐ Upgrade to Premium",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextDark,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                if (userData.isPremium) {
+                item {
                     Text(
-                        text = when (userData.premiumType) {
-                            "lifetime" -> "You have Lifetime Premium!"
-                            "monthly" -> "You have Monthly Premium!"
-                            else -> "You are Premium!"
+                        text = if (userData.isPremium) "👑 Premium Member" else "⭐ Upgrade to Premium",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextDark,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Text(
+                        text = if (userData.isPremium) {
+                            when (userData.premiumType) {
+                                "lifetime" -> "You have Lifetime Premium!"
+                                "monthly" -> "You have Monthly Premium!"
+                                else -> "You are Premium!"
+                            }
+                        } else {
+                            "Unlock all premium features"
                         },
                         fontSize = 16.sp,
-                        color = TextLight,
-                        modifier = Modifier.padding(bottom = 24.dp)
-                    )
-                } else {
-                    Text(
-                        text = "Unlock all premium features",
-                        fontSize = 16.sp,
-                        color = TextLight,
-                        modifier = Modifier.padding(bottom = 24.dp)
+                        color = TextLight
                     )
                 }
 
                 if (!userData.isPremium) {
-                    // Monthly Subscription
-                    SubscriptionOptionCard(
-                        title = "Monthly Premium",
-                        price = "$1.99",
-                        period = "per month",
-                        features = listOf(
-                            "✨ All premium avatars",
-                            "🎨 All premium backgrounds",
-                            "✨ All premium effects",
-                            "🔄 Cancel anytime"
-                        ),
-                        isRecommended = false,
-                        onClick = { onUpgrade("monthly") }
-                    )
+                    item {
+                        SubscriptionOptionCard(
+                            title = "Monthly Premium",
+                            price = "$0.99",
+                            period = "per month",
+                            features = listOf(
+                                "✨ All premium avatars",
+                                "🎨 All premium backgrounds",
+                                "✨ All premium effects",
+                                "🚫 Ad-free experience",
+                                "🔄 Cancel anytime"
+                            ),
+                            isRecommended = false,
+                            onClick = { onUpgrade("monthly") }
+                        )
+                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Lifetime Subscription
-                    SubscriptionOptionCard(
-                        title = "Lifetime Premium",
-                        price = "$8.99",
-                        period = "one-time",
-                        features = listOf(
-                            "✨ All premium avatars",
-                            "🎨 All premium backgrounds",
-                            "✨ All premium effects",
-                            "👑 Forever premium access"
-                        ),
-                        isRecommended = true,
-                        onClick = { onUpgrade("lifetime") }
-                    )
+                    item {
+                        SubscriptionOptionCard(
+                            title = "Lifetime Premium",
+                            price = "$9.99",
+                            period = "one-time",
+                            features = listOf(
+                                "✨ All premium avatars",
+                                "🎨 All premium backgrounds",
+                                "✨ All premium effects",
+                                "🚫 Ad-free experience",
+                                "👑 Forever premium access"
+                            ),
+                            isRecommended = true,
+                            onClick = { onUpgrade("lifetime") }
+                        )
+                    }
                 } else {
-                    // Show current subscription info
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = LightBlue),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            colors = CardDefaults.cardColors(containerColor = LightBlue),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Current Plan",
+                                    fontSize = 14.sp,
+                                    color = TextLight,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                                Text(
+                                    text = when (userData.premiumType) {
+                                        "lifetime" -> "Lifetime Premium"
+                                        "monthly" -> "Monthly Premium"
+                                        else -> "Premium"
+                                    },
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextDark
+                                )
+                            }
+                        }
+                    }
+
+                    // Cancel monthly subscription (prototype)
+                    if (userData.premiumType == "monthly") {
+                        item {
+                            Button(
+                                onClick = onCancelMonthly,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B6B)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "Cancel Monthly Subscription",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = BackgroundWhite,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
                             Text(
-                                text = "Current Plan",
-                                fontSize = 14.sp,
+                                text = "You’ll return to the free plan (ads + limits).",
+                                fontSize = 12.sp,
                                 color = TextLight,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            Text(
-                                text = when (userData.premiumType) {
-                                    "lifetime" -> "Lifetime Premium"
-                                    "monthly" -> "Monthly Premium"
-                                    else -> "Premium"
-                                },
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextDark
+                                modifier = Modifier.padding(top = 8.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Close button
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = if (userData.isPremium) "Close" else "Maybe Later",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
+                item {
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = if (userData.isPremium) "Close" else "Maybe Later",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }

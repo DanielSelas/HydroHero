@@ -143,7 +143,8 @@ fun ShopScreen(
                                     onClick = onClaimReward,
                                     colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
                                     shape = RoundedCornerShape(6.dp),
-                                    modifier = Modifier.height(28.dp)
+                                    modifier = Modifier.height(36.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                                 ) {
                                     Text(
                                         "Claim Reward",
@@ -156,7 +157,8 @@ fun ShopScreen(
                                     onClick = { },
                                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                                     shape = RoundedCornerShape(6.dp),
-                                    modifier = Modifier.height(28.dp)
+                                    modifier = Modifier.height(36.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                                 ) {
                                     Text(
                                         "Keep Going",
@@ -319,6 +321,8 @@ fun ShopScreen(
                     }
                 }
             }
+
+            // (Banner ad is shown globally in MainActivity above the bottom nav)
         }
     }
 }
