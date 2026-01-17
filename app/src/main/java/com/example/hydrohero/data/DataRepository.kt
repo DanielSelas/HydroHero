@@ -72,6 +72,30 @@ class DataRepository(context: Context) {
             premiumType = prefs.getString(KEY_PREMIUM_TYPE, "none") ?: "none"
         )
     }
+
+    /**
+     * Prototype-only: reset all user progress to a clean state immediately.
+     * Keeps the currently saved daily goal (KEY_DAILY_GOAL) so demos can adjust it.
+     */
+    fun resetPrototypeState() {
+        val today = getTodayDateString()
+        prefs.edit()
+            .putString(KEY_LAST_DATE, today)
+            .putInt(KEY_CURRENT_INTAKE, 0)
+            .putInt(KEY_GLASSES_COUNT, 0)
+            .putInt(KEY_STREAK, 0)
+            .putBoolean(KEY_GOAL_COMPLETED_TODAY, false)
+            .putInt(KEY_REMINDER_COMPLETIONS, 0)
+            .putBoolean(KEY_REMINDER_REWARD_CLAIMED, false)
+            .putInt(KEY_COINS, 800)
+            .putStringSet(KEY_OWNED_ITEMS, setOf("water", "none"))
+            .putBoolean(KEY_IS_PREMIUM, false)
+            .putString(KEY_PREMIUM_TYPE, "none")
+            .putString(KEY_SELECTED_EFFECT, "💧")
+            .putString(KEY_SELECTED_AVATAR, "💧")
+            .putString(KEY_SELECTED_BACKGROUND, "none")
+            .apply()
+    }
     
     fun getReminderCompletions(): Int {
         return prefs.getInt(KEY_REMINDER_COMPLETIONS, 0)

@@ -1,6 +1,8 @@
 package com.example.hydrohero
 
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Build
 import androidx.activity.ComponentActivity
@@ -8,7 +10,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -73,8 +78,37 @@ fun HydroHeroApp() {
     var showAddWaterDialog by remember { mutableStateOf(false) }
     var showAddReminderDialog by remember { mutableStateOf(false) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
+    var showRateDialog by remember { mutableStateOf(false) }
+    var selectedRating by remember { mutableStateOf(5) }
+    var hasShownRateForReminderReward by remember { mutableStateOf(false) }
 
     val activity = context as? Activity
+
+    val privacyPolicyUrl =
+        "https://sites.google.com/d/1n-Sg5VBSLgKZtTXVFLVuaQVSxW90SoPv/p/1Pu21Hb0X4nGiycH7PnGe3hGKmd38DBOZ/edit"
+    val termsOfServiceUrl =
+        "https://sites.google.com/d/1RK9-bYQa3DolFboLLIT7t5UE88ryS9PE/p/1fw2mlA_WVUxomHGnc2Gx835bBgCYAc83/edit"
+
+    fun openUrl(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        context.startActivity(intent)
+    }
+
+    fun shareApp() {
+        // Prototype-friendly: share a short message (replace link with Play Store URL when published)
+        val shareText =
+            "Hydro Hero 💧\n" +
+                "A fun hydration tracker with goals, reminders, coins, and customization.\n\n" +
+                "Try it out!"
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Hydro Hero")
+            putExtra(Intent.EXTRA_TEXT, shareText)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share Hydro Hero"))
+    }
 
     // Interstitial (test unit id)
     val interstitialUnitId = "ca-app-pub-3940256099942544/1033173712"
@@ -181,6 +215,7 @@ fun HydroHeroApp() {
         }
     }
 
+
     // Mock reminder completion toasts (driven by hydration milestones 25/50/75%)
     LaunchedEffect(viewModel.reminderMilestoneToastEvent) {
         if (viewModel.reminderMilestoneToastEvent > 0) {
@@ -189,6 +224,16 @@ fun HydroHeroApp() {
                 viewModel.reminderMilestoneToastMessage,
                 android.widget.Toast.LENGTH_SHORT
             ).show()
+        }
+    }
+
+    // Auto-show Rate dialog when the "3 reminders" reward is completed (once per reset)
+    LaunchedEffect(viewModel.reminderRewardClaimed) {
+        if (!viewModel.reminderRewardClaimed) {
+            hasShownRateForReminderReward = false
+        } else if (!hasShownRateForReminderReward) {
+            showRateDialog = true
+            hasShownRateForReminderReward = true
         }
     }
 
@@ -394,7 +439,19 @@ fun HydroHeroApp() {
                             // TODO: Export data
                         },
                         onResetProgress = {
-                            // TODO: Show confirmation and reset
+                            showResetDialog = true
+                        },
+                        onRateApp = {
+                            showRateDialog = true
+                        },
+                        onShareApp = {
+                            shareApp()
+                        },
+                        onOpenPrivacyPolicy = {
+                            openUrl(privacyPolicyUrl)
+                        },
+                        onOpenTermsOfService = {
+                            openUrl(termsOfServiceUrl)
                         }
                     )
                 }
@@ -402,6 +459,100 @@ fun HydroHeroApp() {
         }
         
         // Overlays on top of everything
+        if (showResetDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetDialog = false },
+                title = { Text("Reset Progress?") },
+                text = { Text("This will reset your demo progress (intake, coins, streak, shop, reminders).") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.resetProgress()
+                            showResetDialog = false
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
+                            android.widget.Toast.makeText(context, "Progress reset ✅", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    ) { Text("Reset") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showResetDialog = false }) { Text("Cancel") }
+                }
+            )
+        }
+
+        if (showRateDialog) {
+            AlertDialog(
+                onDismissRequest = { showRateDialog = false },
+                title = { Text("Rate Hydro Hero") },
+                text = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text("If you enjoy the app, please rate us!")
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            (1..5).forEach { star ->
+                                val filled = star <= selectedRating
+                                Text(
+                                    text = if (filled) "★" else "☆",
+                                    fontSize = 34.sp,
+                                    color = if (filled) Color(0xFFFFD700) else Color(0xFF9CA3AF),
+                                    modifier = Modifier
+                                        .clickable { selectedRating = star }
+                                        .padding(horizontal = 2.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "Your rating: $selectedRating/5",
+                            fontSize = 12.sp,
+                            color = Color(0xFF6B7280)
+                        )
+                    }
+                },
+                confirmButton = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Button(
+                            onClick = {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Thanks! You rated us $selectedRating/5 ⭐",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                                showRateDialog = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                        ) {
+                            Text("Rate us now")
+                        }
+                        TextButton(
+                            onClick = { showRateDialog = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+    Text(
+                                "Maybe later",
+                                color = PrimaryBlue
+                            )
+                        }
+                    }
+                },
+                dismissButton = {}
+            )
+        }
+
         if (showAddWaterDialog) {
             AddWaterDialog(
                 onDismiss = { showAddWaterDialog = false },

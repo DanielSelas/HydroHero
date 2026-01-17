@@ -3,8 +3,10 @@ package com.example.hydrohero.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,8 +37,14 @@ fun SettingsScreen(
     onToggleSync: () -> Unit,
     onExportData: () -> Unit,
     onResetProgress: () -> Unit,
+    onRateApp: () -> Unit,
+    onShareApp: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
+    onOpenTermsOfService: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showContact by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -72,7 +80,9 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp)
+                .padding(bottom = 140.dp)
         ) {
             // Daily Goal Section
             SettingsCard(
@@ -257,31 +267,105 @@ fun SettingsScreen(
                     color = TextLight,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                TextButton(onClick = { }) {
-                    Text(
-                        "Privacy Policy",
-                        color = PrimaryBlue,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                TextButton(
+                    onClick = onRateApp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            "Rate Hydro Hero",
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
-                TextButton(onClick = { }) {
-                    Text(
-                        "Terms of Service",
-                        color = PrimaryBlue,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                TextButton(
+                    onClick = onShareApp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            "Share Hydro Hero",
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
-                TextButton(onClick = { }) {
-                    Text(
-                        "Contact Support",
-                        color = PrimaryBlue,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                TextButton(
+                    onClick = onOpenPrivacyPolicy,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            "Privacy Policy",
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+                TextButton(
+                    onClick = onOpenTermsOfService,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            "Terms of Service",
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+                TextButton(
+                    onClick = { showContact = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            "Contact Support",
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
 
             // (Banner ad is shown globally in MainActivity above the bottom nav)
         }
+    }
+
+    if (showContact) {
+        AlertDialog(
+            onDismissRequest = { showContact = false },
+            title = { Text("Contact Support") },
+            text = {
+                Text(
+                    "Creator: Daniel Sela\n" +
+                        "Email: danielsela96@#gmail.com\n\n" +
+                        "For help or feedback, send a message with:\n" +
+                        "- Your device/emulator Android version\n" +
+                        "- What you tried to do\n" +
+                        "- A screenshot (if possible)"
+                )
+            },
+            confirmButton = {
+                Button(onClick = { showContact = false }) { Text("Close") }
+            }
+        )
     }
 }
 

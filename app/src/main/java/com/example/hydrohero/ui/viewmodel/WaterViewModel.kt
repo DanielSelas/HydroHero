@@ -65,6 +65,121 @@ class WaterViewModel(
     // Reminder UX: explicit "Done" state (separate from enable/scheduling)
     var completedReminderIds by mutableStateOf<Set<String>>(emptySet())
         private set
+
+    private fun defaultShopItems(): List<ShopItem> =
+        listOf(
+            // Avatars
+            ShopItem("water", "Water Drop", 0, "💧", true, ShopCategory.AVATAR, false), // Free default
+            ShopItem("bear", "Sleepy Bear", 100, "🐻", false, ShopCategory.AVATAR, false),
+            ShopItem("fox", "Curious Fox", 150, "🦊", false, ShopCategory.AVATAR, false),
+            ShopItem("bunny", "Hopping Bunny", 180, "🐰", false, ShopCategory.AVATAR, false),
+            ShopItem("panda", "Cute Panda", 200, "🐼", false, ShopCategory.AVATAR, false),
+            ShopItem("cat", "Cool Cat", 220, "🐱", false, ShopCategory.AVATAR, false),
+            ShopItem("dog", "Happy Dog", 250, "🐶", false, ShopCategory.AVATAR, false),
+            ShopItem("tiger", "Wild Tiger", 300, "🐯", false, ShopCategory.AVATAR, true), // Premium
+            ShopItem("lion", "Brave Lion", 350, "🦁", false, ShopCategory.AVATAR, true), // Premium
+            ShopItem("dragon", "Mystic Dragon", 500, "🐲", false, ShopCategory.AVATAR, true), // Premium
+
+            // Effects
+            ShopItem("whale", "Whale Spout", 130, "🐋", false, ShopCategory.EFFECT, false),
+            ShopItem("bottle1", "Classic Bottle", 100, "🍼", false, ShopCategory.EFFECT, false),
+            ShopItem("bottle2", "Sports Bottle", 150, "🥤", false, ShopCategory.EFFECT, false),
+            ShopItem("cup", "Magic Cup", 180, "☕", false, ShopCategory.EFFECT, true), // Premium
+
+            // Backgrounds
+            ShopItem("none", "No Background", 0, "⚪", true, ShopCategory.BACKGROUND, false), // Free default
+            ShopItem("sea", "Deep Blue Sea", 220, "🌊", false, ShopCategory.BACKGROUND, false),
+            ShopItem("stars", "Starry Night", 200, "⭐", false, ShopCategory.BACKGROUND, false),
+            ShopItem("rainbow", "Rainbow Sky", 250, "🌈", false, ShopCategory.BACKGROUND, true), // Premium
+            ShopItem("sunset", "Sunset View", 280, "🌅", false, ShopCategory.BACKGROUND, true), // Premium
+            ShopItem("forest", "Forest Path", 300, "🌲", false, ShopCategory.BACKGROUND, true), // Premium
+            ShopItem("beach", "Beach Paradise", 320, "🏖️", false, ShopCategory.BACKGROUND, true) // Premium
+        )
+
+    private fun defaultPresetReminders(): List<Reminder> =
+        listOf(
+            Reminder(
+                id = "morning",
+                title = "Start Your Day",
+                description = "Start your day with a glass of water before 8:00 AM.",
+                time = "8:00 AM",
+                isEnabled = true,
+                isPreset = true
+            ),
+            Reminder(
+                id = "midday",
+                title = "Midday Check",
+                description = "Have you drunk at least half of your daily amount? Check around noon.",
+                time = "12:00 PM",
+                isEnabled = true,
+                isPreset = true
+            ),
+            Reminder(
+                id = "evening",
+                title = "Evening Wind-down",
+                description = "A final sip before bed at 9:00 PM.",
+                time = "9:00 PM",
+                isEnabled = true,
+                isPreset = true
+            )
+        )
+
+    private fun defaultCustomReminders(): List<Reminder> =
+        listOf(
+            Reminder(
+                id = "afternoon",
+                title = "Afternoon Hydration",
+                description = "1:00 PM, Daily.",
+                time = "1:00 PM",
+                isEnabled = true,
+                isPreset = false
+            ),
+            Reminder(
+                id = "bedtime",
+                title = "Bedtime Sip",
+                description = "9:30 PM, Weekdays.",
+                time = "9:30 PM",
+                isEnabled = false,
+                isPreset = false
+            )
+        )
+
+    /**
+     * Reset all in-memory + persisted state for demo/prototype.
+     */
+    fun resetProgress() {
+        // Cancel any scheduled reminders and keep notifications OFF by default
+        notificationsEnabled = false
+        (presetReminders + customReminders).forEach { reminderScheduler.cancel(it.id) }
+
+        dataRepository.resetPrototypeState()
+        userData = dataRepository.getUserData()
+
+        // Reset local/prototype-only state
+        waterEntries = emptyList()
+        completedReminderIds = emptySet()
+        reminderMilestoneStage = 0
+        reminderMilestoneToastMessage = ""
+        reminderMilestoneToastEvent = 0
+
+        reminderCompletions = 0
+        reminderRewardClaimed = false
+
+        // Reset overlays/ads flags
+        showCelebration = false
+        showProgressFeedback = false
+        showCoinsEarned = false
+        coinsEarnedAmount = 0
+        coinsEarnedSubtitle = ""
+        showGoalPopupAd = false
+
+        // Reset shop + reminders lists to defaults, then re-apply owned items from persistence
+        shopItems = defaultShopItems()
+        presetReminders = defaultPresetReminders()
+        customReminders = defaultCustomReminders()
+        selectedCategory = "All"
+        loadOwnedShopItems()
+    }
     
     fun updateDailyGoal(newGoal: Int) {
         // Recalculate goal completion status based on new goal
@@ -509,7 +624,9 @@ class WaterViewModel(
         selectedCategory = category
     }
 
-    var notificationsEnabled by mutableStateOf(true)
+    // Prototype: start with notifications OFF each time the app is opened.
+    // When the user enables it, Android 13+ will request POST_NOTIFICATIONS permission via MainActivity.
+    var notificationsEnabled by mutableStateOf(false)
         private set
     var soundEnabled by mutableStateOf(true)
         private set
