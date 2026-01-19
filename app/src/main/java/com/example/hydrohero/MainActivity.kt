@@ -576,7 +576,7 @@ fun HydroHeroApp() {
                             "Custom reminder limit reached! Upgrade to Premium for unlimited reminders 👑",
                             android.widget.Toast.LENGTH_SHORT
                         ).show()
-                    }
+}
                 }
             )
         }
