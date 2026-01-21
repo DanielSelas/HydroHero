@@ -3,6 +3,8 @@ package com.example.hydrohero.ui.viewmodel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.hydrohero.analytics.AnalyticsLogger
+import com.example.hydrohero.analytics.NoOpAnalyticsLogger
 import com.example.hydrohero.data.DataRepository
 import com.example.hydrohero.data.Reminder
 import com.example.hydrohero.data.ShopCategory
@@ -13,7 +15,8 @@ import com.example.hydrohero.notifications.ReminderScheduler
 
 class WaterViewModel(
     private val dataRepository: DataRepository,
-    private val reminderScheduler: ReminderScheduler
+    private val reminderScheduler: ReminderScheduler,
+    private val analytics: AnalyticsLogger = NoOpAnalyticsLogger
 ) {
     // Don't call getUserData() here because it has side-effects (prototype resets).
     // We'll load it once in init.
@@ -285,6 +288,7 @@ class WaterViewModel(
     }
 
     fun addWater(amount: Int) {
+        val intakeBefore = userData.currentIntake
         val newIntake = userData.currentIntake + amount
         val wasGoalReached = userData.currentIntake >= userData.dailyGoal
         val isGoalReached = newIntake >= userData.dailyGoal
@@ -305,6 +309,19 @@ class WaterViewModel(
         
         // Save to persistence
         dataRepository.updateIntake(newIntake, newGlassesCount)
+
+        analytics.logEvent(
+            "water_add",
+            mapOf(
+                "amount_ml" to amount,
+                "intake_before_ml" to intakeBefore,
+                "intake_after_ml" to newIntake,
+                "goal_ml" to userData.dailyGoal,
+                "progress_pct" to progressPercentage.toDouble(),
+                "is_first_today" to (intakeBefore == 0),
+                "reached_goal" to (!wasGoalReached && isGoalReached)
+            )
+        )
 
         // Mock reminder completion milestones based on hydration progress
         handleReminderMilestones(progressPercentage)
@@ -333,6 +350,17 @@ class WaterViewModel(
             showProgressFeedback = false // Cancel any progress feedback
             showCelebration = true
             showGoalPopupAd = true
+
+            analytics.logEvent(
+                "goal_completed",
+                mapOf(
+                    "goal_ml" to userData.dailyGoal,
+                    "intake_after_ml" to userData.currentIntake,
+                    "coins_earned" to coinsEarned,
+                    "coins_after" to newCoins,
+                    "streak_after" to newStreak
+                )
+            )
         } else if (!isGoalReached) {
             // Show progress feedback for milestones (only if not at goal)
             val message = when {
@@ -368,6 +396,16 @@ class WaterViewModel(
             .map { it.id }
             .toSet()
         completedReminderIds = completedReminderIds + presetIdsToMarkDone
+        dataRepository.saveCompletedReminderIds(completedReminderIds)
+
+        analytics.logEvent(
+            "reminder_milestone_reached",
+            mapOf(
+                "stage" to reminderMilestoneStage,
+                "reminder_completions" to reminderCompletions,
+                "progress_pct" to progressPercentage.toDouble()
+            )
+        )
 
         // Toast message referencing the 1st/2nd/3rd preset reminder
         val reminderName = when (reminderMilestoneStage) {
@@ -386,11 +424,21 @@ class WaterViewModel(
     }
 
     fun toggleReminderDone(id: String) {
-        completedReminderIds = if (completedReminderIds.contains(id)) {
+        val nowDone = !completedReminderIds.contains(id)
+        completedReminderIds = if (!nowDone) {
             completedReminderIds - id
         } else {
             completedReminderIds + id
         }
+        dataRepository.saveCompletedReminderIds(completedReminderIds)
+
+        analytics.logEvent(
+            "reminder_done",
+            mapOf(
+                "reminder_id" to id,
+                "done" to nowDone
+            )
+        )
     }
 
     // (Manual reminder progress removed; driven by hydration milestones now)
@@ -657,6 +705,13 @@ class WaterViewModel(
     fun updateNotificationsEnabled(enabled: Boolean) {
         notificationsEnabled = enabled
         syncReminderSchedules()
+
+        analytics.logEvent(
+            "notifications_toggle",
+            mapOf(
+                "enabled" to enabled
+            )
+        )
     }
 
     private fun syncReminderSchedules() {

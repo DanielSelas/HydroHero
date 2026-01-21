@@ -26,6 +26,7 @@ class DataRepository(context: Context) {
         private const val KEY_REMINDER_REWARD_CLAIMED = "reminder_reward_claimed"
         private const val KEY_IS_PREMIUM = "is_premium"
         private const val KEY_PREMIUM_TYPE = "premium_type"
+        private const val KEY_COMPLETED_REMINDER_IDS = "completed_reminder_ids"
     }
 
     fun getUserData(): UserData {
@@ -57,6 +58,7 @@ class DataRepository(context: Context) {
             .putString(KEY_SELECTED_EFFECT, "💧") // Reset effect to default
             .putString(KEY_SELECTED_AVATAR, "💧") // Reset avatar to default
             .putString(KEY_SELECTED_BACKGROUND, "none") // Reset background to none
+            .putStringSet(KEY_COMPLETED_REMINDER_IDS, emptySet())
             .apply()
         
         return UserData(
@@ -94,7 +96,16 @@ class DataRepository(context: Context) {
             .putString(KEY_SELECTED_EFFECT, "💧")
             .putString(KEY_SELECTED_AVATAR, "💧")
             .putString(KEY_SELECTED_BACKGROUND, "none")
+            .putStringSet(KEY_COMPLETED_REMINDER_IDS, emptySet())
             .apply()
+    }
+
+    fun getCompletedReminderIds(): Set<String> {
+        return prefs.getStringSet(KEY_COMPLETED_REMINDER_IDS, emptySet()) ?: emptySet()
+    }
+
+    fun saveCompletedReminderIds(ids: Set<String>) {
+        prefs.edit().putStringSet(KEY_COMPLETED_REMINDER_IDS, ids).apply()
     }
     
     fun getReminderCompletions(): Int {

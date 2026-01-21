@@ -29,6 +29,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.hydrohero.analytics.FirebaseAnalyticsLogger
 import com.example.hydrohero.data.DataRepository
 import com.example.hydrohero.notifications.NotificationChannels
 import com.example.hydrohero.notifications.ReminderScheduler
@@ -74,7 +75,8 @@ fun HydroHeroApp() {
     val context = LocalContext.current
     val dataRepository = remember { DataRepository(context) }
     val reminderScheduler = remember { ReminderScheduler(context) }
-    val viewModel = remember { WaterViewModel(dataRepository, reminderScheduler) }
+    val analytics = remember { FirebaseAnalyticsLogger(context.applicationContext) }
+    val viewModel = remember { WaterViewModel(dataRepository, reminderScheduler, analytics) }
     var showAddWaterDialog by remember { mutableStateOf(false) }
     var showAddReminderDialog by remember { mutableStateOf(false) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
@@ -123,6 +125,29 @@ fun HydroHeroApp() {
     LaunchedEffect(Unit) {
         NotificationChannels.ensureCreated(context)
         MobileAds.initialize(context)
+        analytics.setUserProperty("build_type", "debug")
+    }
+
+    // Log screen views based on navigation destination
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    LaunchedEffect(currentRoute) {
+        val screenName = when (currentRoute) {
+            Screen.Home.route -> "Home"
+            Screen.Reminders.route -> "Reminders"
+            Screen.Shop.route -> "Shop"
+            Screen.DailyProgress.route -> "DailyProgress"
+            Screen.Settings.route -> "Settings"
+            else -> currentRoute ?: "Unknown"
+        }
+        analytics.logScreen(screenName)
+    }
+
+    // Log key modal opens
+    LaunchedEffect(showSubscriptionDialog) {
+        if (showSubscriptionDialog) {
+            analytics.logEvent("subscription_dialog_open")
+        }
     }
 
     // Load ads (only needed for free users)
