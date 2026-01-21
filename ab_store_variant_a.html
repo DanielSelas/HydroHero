@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hydro Hero — Store Listing A/B (Variant A: Busy / Simple)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --primary-blue: #4A90E2;
+        --light-blue: #6BC5F2;
+        --accent-green: #6BCF7F;
+        --bg-light: #F5F7FA;
+        --bg-white: #FFFFFF;
+        --text-dark: #1A1A1A;
+        --text-light: #6B7280;
+        --border-light: #E5E7EB;
+        --card-border: #E0E7FF;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        background: var(--bg-light);
+        color: var(--text-dark);
+        padding: 28px;
+        display: grid;
+        place-items: center;
+      }
+
+      .canvas {
+        width: min(1240px, 96vw);
+        background: var(--bg-white);
+        border: 1px solid var(--border-light);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        padding: 22px;
+      }
+
+      .top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 14px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border-light);
+      }
+
+      .top h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .top .tag {
+        font-size: 12px;
+        color: var(--text-light);
+        background: #EEF2FF;
+        border: 1px solid #E0E7FF;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-weight: 700;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        padding: 16px;
+        background: var(--bg-white);
+      }
+
+      .panel h2 {
+        margin: 0 0 6px;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .panel p {
+        margin: 0;
+        color: var(--text-light);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .bullets {
+        margin-top: 12px;
+        display: grid;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-dark);
+      }
+      .bullets div {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--primary-blue);
+        margin-top: 5px;
+        flex: 0 0 auto;
+      }
+      .muted {
+        color: var(--text-light);
+      }
+
+      /* Feature graphic mock (1024×500 aspect) */
+      .feature {
+        border-radius: 16px;
+        border: 1px solid var(--border-light);
+        overflow: hidden;
+        background:
+          radial-gradient(900px 500px at 20% 20%, rgba(107, 197, 242, 0.35), transparent 55%),
+          radial-gradient(900px 500px at 80% 25%, rgba(74, 144, 226, 0.28), transparent 55%),
+          linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+      }
+      .featureInner {
+        aspect-ratio: 1024 / 500;
+        padding: 26px 28px;
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+        align-items: center;
+      }
+      .brandRow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(26, 26, 26, 0.08);
+        background: #ffffff;
+      }
+      .icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .brandText .name {
+        font-weight: 900;
+        font-size: 18px;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+      .brandText .sub {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: var(--text-light);
+        font-weight: 600;
+      }
+      .headline {
+        margin-top: 14px;
+        font-size: 34px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+      }
+      .strap {
+        margin-top: 10px;
+        font-size: 14px;
+        color: rgba(26, 26, 26, 0.72);
+        font-weight: 600;
+      }
+      .chips {
+        margin-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        font-size: 12px;
+        font-weight: 700;
+        color: #1A1A1A;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(26, 26, 26, 0.10);
+        padding: 8px 10px;
+        border-radius: 999px;
+      }
+
+      .rightCard {
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid rgba(26, 26, 26, 0.10);
+        border-radius: 16px;
+        padding: 14px;
+      }
+      .rightCard .k {
+        font-size: 12px;
+        font-weight: 800;
+        color: rgba(26, 26, 26, 0.70);
+      }
+      .rightCard .v {
+        margin-top: 6px;
+        font-size: 22px;
+        font-weight: 900;
+      }
+      .rightCard .s {
+        margin-top: 8px;
+        font-size: 12px;
+        color: rgba(26, 26, 26, 0.70);
+        line-height: 1.45;
+      }
+
+      /* Screenshot strip */
+      .shotsTitle {
+        margin-top: 14px;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      .shotsSub {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--text-light);
+      }
+      .shots {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .shot {
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--bg-white);
+      }
+      .shotTop {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .shotTop .t {
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .shotTop .n {
+        font-size: 11px;
+        color: var(--text-light);
+        font-weight: 700;
+      }
+      .shotBody {
+        padding: 12px;
+        background: var(--bg-light);
+      }
+
+      /* Tiny “Visily-style” screen snippets */
+      .miniHeader {
+        background: var(--bg-white);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .miniHeader .ico { color: var(--primary-blue); font-size: 16px; }
+      .miniHeader .ttl { font-weight: 800; font-size: 13px; flex: 1; }
+      .miniHeader .pill {
+        background: #FEF3C7;
+        color: #92400E;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        border: 1px solid rgba(146, 64, 14, 0.12);
+      }
+
+      .miniCard {
+        margin-top: 10px;
+        background: var(--bg-white);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .miniTitle {
+        font-weight: 900;
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+      .miniRow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-light);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .miniBtn {
+        margin-top: 10px;
+        width: 100%;
+        border: 0;
+        background: var(--primary-blue);
+        color: #fff;
+        font-weight: 800;
+        border-radius: 12px;
+        padding: 12px 10px;
+        font-size: 12px;
+      }
+      .miniList {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .miniItem {
+        background: var(--bg-white);
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        padding: 10px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      .miniItem .l {
+        display: grid;
+        gap: 2px;
+      }
+      .miniItem .l .a { font-weight: 800; font-size: 12px; }
+      .miniItem .l .b { color: var(--text-light); font-size: 11px; font-weight: 600; }
+      .toggle {
+        width: 42px; height: 24px;
+        background: #D1D5DB;
+        border-radius: 999px;
+        position: relative;
+        border: 1px solid rgba(17, 24, 39, 0.06);
+      }
+      .toggle.on { background: var(--primary-blue); }
+      .toggle::after {
+        content: "";
+        width: 18px; height: 18px;
+        background: #fff;
+        border-radius: 999px;
+        position: absolute;
+        top: 2px; left: 2px;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+      }
+      .toggle.on::after { left: 20px; }
+
+      @media (max-width: 980px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas">
+      <div class="top">
+        <h1>Google Play Store Listing — A/B Test</h1>
+        <div class="tag">Variant A • Busy / Simple</div>
+      </div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2>What we change (same app)</h2>
+          <p>
+            We test a different <strong>feature graphic headline</strong> and the
+            <strong>first screenshot order</strong> to match “busy users”.
+          </p>
+
+          <div class="bullets" style="margin-top:14px;">
+            <div><span class="dot"></span><div><strong>Headline:</strong> “Track Water in Seconds”</div></div>
+            <div><span class="dot"></span><div><strong>Short description:</strong> Simple water tracker with reminders and a daily goal.</div></div>
+            <div><span class="dot"></span><div><strong>Screenshot order:</strong> <span class="muted">Home → Daily Progress → Reminders</span></div></div>
+          </div>
+
+          <div class="shotsTitle">Screenshots (first 3)</div>
+          <div class="shotsSub">These are the first screens a user will see in the store listing.</div>
+          <div class="shots">
+            <div class="shot">
+              <div class="shotTop"><div class="t">Home</div><div class="n">#1</div></div>
+              <div class="shotBody">
+                <div class="miniHeader"><div class="ico">💧</div><div class="ttl">Home</div><div class="pill">Premium</div></div>
+                <div class="miniCard">
+                  <div class="miniTitle">Today’s progress</div>
+                  <div class="miniRow"><span>Glasses</span><strong style="color:var(--text-dark)">5/8</strong></div>
+                  <button class="miniBtn">+ Add Water</button>
+                </div>
+              </div>
+            </div>
+            <div class="shot">
+              <div class="shotTop"><div class="t">Daily Progress</div><div class="n">#2</div></div>
+              <div class="shotBody">
+                <div class="miniHeader"><div class="ico">📈</div><div class="ttl">Daily Progress</div><div class="pill">Today</div></div>
+                <div class="miniCard">
+                  <div class="miniRow"><span>Drinks</span><strong style="color:var(--text-dark)">8</strong></div>
+                  <div class="miniRow" style="margin-top:6px;"><span>Last</span><strong style="color:var(--text-dark)">14:12</strong></div>
+                </div>
+                <div class="miniList" aria-label="Water entries">
+                  <div class="miniItem"><div class="l"><div class="a">+250ml</div><div class="b">14:12</div></div><div class="pill" style="background:#EEF2FF;color:#3730A3;border-color:#E0E7FF">Logged</div></div>
+                  <div class="miniItem"><div class="l"><div class="a">+200ml</div><div class="b">13:05</div></div><div class="pill" style="background:#EEF2FF;color:#3730A3;border-color:#E0E7FF">Logged</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="shot">
+              <div class="shotTop"><div class="t">Reminders</div><div class="n">#3</div></div>
+              <div class="shotBody">
+                <div class="miniHeader"><div class="ico">🔔</div><div class="ttl">Reminders</div><div class="pill">On</div></div>
+                <div class="miniList">
+                  <div class="miniItem"><div class="l"><div class="a">Morning Boost</div><div class="b">09:00</div></div><div class="toggle on"></div></div>
+                  <div class="miniItem"><div class="l"><div class="a">Midday Refresh</div><div class="b">13:00</div></div><div class="toggle"></div></div>
+                  <div class="miniItem"><div class="l"><div class="a">Evening Wind-down</div><div class="b">18:00</div></div><div class="toggle"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Feature Graphic (1024×500)</h2>
+          <p>Use this as the store header image for Variant A.</p>
+          <div style="height:12px"></div>
+          <div class="feature" role="img" aria-label="Feature graphic preview for Variant A">
+            <div class="featureInner">
+              <div>
+                <div class="brandRow">
+                  <div class="icon"><img src="app-icon.png" alt="Hydro Hero icon" /></div>
+                  <div class="brandText">
+                    <p class="name">Hydro Hero</p>
+                    <p class="sub">Hydration tracker • Reminders • Daily goal</p>
+                  </div>
+                </div>
+                <div class="headline">Track Water<br/>in Seconds</div>
+                <div class="strap">Fast logging + clear daily goal + optional reminders.</div>
+                <div class="chips">
+                  <div class="chip">Quick Add</div>
+                  <div class="chip">Daily Goal</div>
+                  <div class="chip">Reminders</div>
+                </div>
+              </div>
+              <div class="rightCard">
+                <div class="k">Best for</div>
+                <div class="v">Busy users</div>
+                <div class="s">Minimal friction. The listing highlights speed and clarity over gamification.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:14px"></div>
+          <div class="muted" style="font-size:12px; line-height:1.45;">
+            Tip: In your presentation, place your real app screenshots in the same order as the “Screenshots (first 3)” row.
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
