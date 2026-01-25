@@ -12,6 +12,7 @@ import com.example.hydrohero.data.ShopItem
 import com.example.hydrohero.data.UserData
 import com.example.hydrohero.data.WaterEntry
 import com.example.hydrohero.notifications.ReminderScheduler
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 class WaterViewModel(
     private val dataRepository: DataRepository,
@@ -182,6 +183,10 @@ class WaterViewModel(
         customReminders = defaultCustomReminders()
         selectedCategory = "All"
         loadOwnedShopItems()
+        
+        
+        // Update context for crash reports
+        updateCrashlyticsContext()
     }
     
     fun updateDailyGoal(newGoal: Int) {
@@ -195,6 +200,8 @@ class WaterViewModel(
         if (!wasGoalReached && showCelebration) {
             showCelebration = false
         }
+        
+        updateCrashlyticsContext()
     }
 
     var presetReminders by mutableStateOf(
@@ -372,6 +379,8 @@ class WaterViewModel(
             progressMessage = message
             showProgressFeedback = true
         }
+        
+        updateCrashlyticsContext()
     }
 
     private fun handleReminderMilestones(progressPercentage: Float) {
@@ -696,6 +705,9 @@ class WaterViewModel(
 
         // Now that reminders + notification toggles are initialized, we can sync schedules safely
         syncReminderSchedules()
+        
+        // Initial crashlytics context
+        updateCrashlyticsContext()
     }
 
     fun toggleNotifications() {
@@ -737,5 +749,19 @@ class WaterViewModel(
 
     fun toggleSync() {
         syncEnabled = !syncEnabled
+    }
+
+
+    private fun updateCrashlyticsContext() {
+        try {
+            val crashlytics = FirebaseCrashlytics.getInstance()
+            crashlytics.setCustomKey("current_coins", userData.coins)
+            crashlytics.setCustomKey("current_streak", userData.streak)
+            crashlytics.setCustomKey("daily_goal", userData.dailyGoal)
+            crashlytics.setCustomKey("current_intake", userData.currentIntake)
+            crashlytics.setCustomKey("is_premium", userData.isPremium)
+            crashlytics.log("State updated: Coins=${userData.coins}, Streak=${userData.streak}")
+        } catch (e: Exception) {
+        }
     }
 }

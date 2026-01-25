@@ -342,6 +342,23 @@ fun SettingsScreen(
                         )
                     }
                 }
+                
+                // Crashlytics Test Button (for presentation demo)
+                TextButton(
+                    onClick = { throw RuntimeException("Test Crash") }, // Force a crash
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Text(
+                            "Test Crash (Demo)",
+                            color = Color.Red,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
 
             // (Banner ad is shown globally in MainActivity above the bottom nav)
