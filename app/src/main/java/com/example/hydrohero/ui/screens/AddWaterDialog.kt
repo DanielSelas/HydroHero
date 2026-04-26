@@ -2,6 +2,7 @@ package com.example.hydrohero.ui.screens
 
 import android.os.Build
 import android.view.HapticFeedbackConstants
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,10 +13,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
@@ -23,17 +25,24 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.hydrohero.ui.theme.*
 
+/**
+ * Re-styled Add Water dialog — soft & friendly aesthetic.
+ *
+ * Same callable signature as the original (onDismiss / onAddWater) so MainActivity
+ * doesn't change. Internally we now show a big amount display, a stepper +
+ * slider-like row, six preset chips, and a primary "Add" button.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddWaterDialog(
     onDismiss: () -> Unit,
     onAddWater: (Int) -> Unit
 ) {
     val view = LocalView.current
-    var customAmount by remember { mutableStateOf("") }
-    
-    fun performHapticFeedback() {
+    fun haptic() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
         } else {
@@ -41,218 +50,338 @@ fun AddWaterDialog(
             view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
         }
     }
-    
-    fun addWaterWithFeedback(amount: Int) {
-        performHapticFeedback()
-        onAddWater(amount)
-        onDismiss()
-    }
-    
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
+
+    var amount by rememberSaveable { mutableIntStateOf(250) }
+    var customText by rememberSaveable { mutableStateOf("") }
+    val customInt = customText.toIntOrNull()
+    val effectiveAmount = customInt ?: amount
+
+    val presets = listOf(
+        Preset(150, "Small glass", "🥃"),
+        Preset(250, "Glass", "🥛"),
+        Preset(350, "Mug", "☕"),
+        Preset(500, "Bottle", "🍶"),
+        Preset(750, "Large bottle", "💦"),
+        Preset(1000, "1 liter", "🚰"),
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.9f)
-                .padding(16.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = BackgroundWhite)
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .imePadding()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 28.dp, bottomEnd = 28.dp),
+                colors = CardDefaults.cardColors(containerColor = HydroSurface),
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("←", fontSize = 18.sp, color = PrimaryBlue)
-                    }
-                    Text(
-                        text = "Add Water",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextDark
-                    )
-                    Spacer(modifier = Modifier.width(40.dp))
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Select amount:",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextDark,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                // Water Options
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                        .padding(horizontal = 22.dp, vertical = 18.dp),
                 ) {
-                    WaterOptionButton(
-                        icon = "🥤",
-                        label = "Small",
-                        amount = "250 ml",
-                        onClick = {
-                            addWaterWithFeedback(250)
+                    // Drag handle
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .width(40.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(HydroLine)
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    Text(
+                        text = "Log a drink",
+                        fontFamily = HydroDisplayFamily,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = HydroInk,
+                        letterSpacing = (-0.4).sp,
+                    )
+                    Text(
+                        text = "How much did you sip?",
+                        fontSize = 13.sp,
+                        color = HydroInk3,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // Big amount display card
+                    AmountDisplay(
+                        amount = effectiveAmount,
+                        onMinus = {
+                            customText = ""
+                            amount = (amount - 50).coerceAtLeast(50)
+                            haptic()
+                        },
+                        onPlus = {
+                            customText = ""
+                            amount = (amount + 50).coerceAtMost(2000)
+                            haptic()
+                        },
+                    )
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Quick picks header
+                    Text(
+                        text = "QUICK PICKS",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HydroInk3,
+                        letterSpacing = 1.sp,
+                    )
+                    Spacer(Modifier.height(10.dp))
+
+                    // 3x2 preset grid (manual; avoids LazyVerticalGrid for simplicity)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        presets.chunked(3).forEach { row ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                row.forEach { p ->
+                                    PresetChip(
+                                        preset = p,
+                                        active = customInt == null && amount == p.ml,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = {
+                                            customText = ""
+                                            amount = p.ml
+                                            haptic()
+                                        }
+                                    )
+                                }
+                                // pad row if fewer than 3
+                                repeat(3 - row.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
                         }
-                    )
-                    WaterOptionButton(
-                        icon = "🥤",
-                        label = "Medium",
-                        amount = "500 ml",
-                        onClick = {
-                            addWaterWithFeedback(500)
-                        },
-                        isMedium = true
-                    )
-                    WaterOptionButton(
-                        icon = "🥤",
-                        label = "Large",
-                        amount = "750 ml",
-                        onClick = {
-                            addWaterWithFeedback(750)
-                        },
-                        isLarge = true
-                    )
-                }
+                    }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(Modifier.height(18.dp))
 
-                // Custom Amount
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = BackgroundWhite),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+                    // Custom amount field
+                    Text(
+                        text = "OR ENTER A CUSTOM AMOUNT",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HydroInk3,
+                        letterSpacing = 1.sp,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = customText,
+                        onValueChange = { txt: String ->
+                            val digits: String = txt.filter { ch -> ch.isDigit() }
+                            customText = if (digits.length > 5) digits.substring(0, 5) else digits
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("ml", color = HydroInk3) },
+                        suffix = { Text("ml", color = HydroInk3) },
+                        shape = RoundedCornerShape(14.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = HydroPrimaryStrong,
+                            unfocusedBorderColor = HydroLine,
+                            cursorColor = HydroPrimaryStrong,
+                            focusedTextColor = HydroInk,
+                            unfocusedTextColor = HydroInk,
+                        ),
+                    )
+
+                    Spacer(Modifier.height(20.dp))
+
+                    // Action row: Cancel + Add
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        Text(
-                            text = "Custom Amount (ml)",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextDark,
-                            modifier = Modifier.padding(bottom = 10.dp)
-                        )
-                        val amountInt = customAmount.toIntOrNull()
-                        val isValidAmount = amountInt != null && amountInt > 0
-
-                        OutlinedTextField(
-                            value = customAmount,
-                            onValueChange = { customAmount = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = {
-                                Text(
-                                    "Enter amount",
-                                    color = TextLight,
-                                    fontSize = 16.sp
-                                )
-                            },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryBlue,
-                                unfocusedBorderColor = BorderLight,
-                                focusedTextColor = Color(0xFF000000),
-                                unfocusedTextColor = Color(0xFF000000),
-                                focusedPlaceholderColor = TextLight,
-                                unfocusedPlaceholderColor = TextLight,
-                                cursorColor = PrimaryBlue
-                            ),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number
-                            ),
-                            textStyle = androidx.compose.ui.text.TextStyle(
-                                fontSize = 18.sp,
-                                color = Color(0xFF000000)
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Always-visible button (disabled until amount is valid)
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(52.dp),
+                            shape = RoundedCornerShape(26.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, HydroLine),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = HydroInk2),
+                        ) {
+                            Text("Cancel", fontWeight = FontWeight.SemiBold)
+                        }
                         Button(
                             onClick = {
-                                if (isValidAmount) {
-                                    addWaterWithFeedback(amountInt!!)
-                                    customAmount = ""
+                                if (effectiveAmount in 1..5000) {
+                                    haptic()
+                                    onAddWater(effectiveAmount)
+                                    onDismiss()
                                 }
                             },
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .weight(2f)
                                 .height(52.dp),
-                            enabled = isValidAmount,
+                            shape = RoundedCornerShape(26.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryBlue,
-                                contentColor = BackgroundWhite,
-                                disabledContainerColor = PrimaryBlue.copy(alpha = 0.35f),
-                                disabledContentColor = BackgroundWhite.copy(alpha = 0.9f)
+                                containerColor = HydroPrimaryStrong,
+                                contentColor = Color.White,
                             ),
-                            shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = "Add Custom Amount",
-                                fontSize = 16.sp,
+                                "Add ${effectiveAmount}ml",
                                 fontWeight = FontWeight.Bold,
-                                color = BackgroundWhite
+                                fontSize = 15.sp,
                             )
                         }
                     }
+
+                    Spacer(Modifier.height(8.dp))
                 }
             }
         }
     }
 }
 
+private data class Preset(val ml: Int, val label: String, val icon: String)
+
 @Composable
-fun WaterOptionButton(
-    icon: String,
-    label: String,
-    amount: String,
-    onClick: () -> Unit,
-    isMedium: Boolean = false,
-    isLarge: Boolean = false
+private fun AmountDisplay(
+    amount: Int,
+    onMinus: () -> Unit,
+    onPlus: () -> Unit,
 ) {
-    Card(
-        onClick = onClick,
+    val glasses = amount / 250f
+    val glassesText = remember(amount) {
+        val rounded = (glasses * 10).toInt() / 10f
+        if (amount == 250) "about 1 glass"
+        else "about ${"%.1f".format(rounded)} glasses"
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .border(2.dp, BorderLight, RoundedCornerShape(16.dp)),
-        colors = CardDefaults.cardColors(containerColor = BackgroundWhite),
-        shape = RoundedCornerShape(16.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                Brush.verticalGradient(
+                    0f to HydroPrimarySofter,
+                    1f to HydroPrimarySoft,
+                )
+            )
+            .padding(horizontal = 20.dp, vertical = 22.dp),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    text = "$amount",
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 56.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HydroPrimaryDeep,
+                    letterSpacing = (-2).sp,
+                )
+                Text(
+                    text = "ml",
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = HydroPrimaryDeep,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                )
+            }
             Text(
-                text = icon,
-                fontSize = if (isLarge) 48.sp else if (isMedium) 42.sp else 36.sp
+                text = glassesText,
+                fontSize = 12.sp,
+                color = HydroInk2,
             )
-            Text(
-                text = label,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextDark
-            )
-            Text(
-                text = amount,
-                fontSize = 14.sp,
-                color = TextLight
-            )
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StepperButton("−", onMinus)
+                // Visual "track" — purely cosmetic, the real adjuster is the +/- buttons
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp)
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(HydroPrimarySoft),
+                ) {
+                    val pct = (amount / 1500f).coerceIn(0f, 1f)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(pct)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(HydroPrimaryDeep),
+                    )
+                }
+                StepperButton("+", onPlus)
+            }
         }
+    }
+}
+
+@Composable
+private fun StepperButton(label: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .clip(RoundedCornerShape(19.dp))
+            .background(HydroSurface)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = HydroPrimaryDeep,
+        )
+    }
+}
+
+@Composable
+private fun PresetChip(
+    preset: Preset,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val bg = if (active) HydroPrimaryDeep else HydroSurface3
+    val fg = if (active) Color.White else HydroInk
+    val border = if (active) HydroPrimaryDeep else HydroLine
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(bg)
+            .border(1.dp, border, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(preset.icon, fontSize = 22.sp)
+        Text(
+            text = "${preset.ml}ml",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = fg,
+        )
+        Text(
+            text = preset.label,
+            fontSize = 10.sp,
+            color = if (active) Color.White.copy(alpha = 0.8f) else HydroInk3,
+        )
     }
 }

@@ -1,19 +1,24 @@
 package com.example.hydrohero.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -24,6 +29,17 @@ import com.example.hydrohero.data.UserData
 import com.example.hydrohero.ui.theme.*
 import kotlinx.coroutines.launch
 
+/**
+ * Shop screen — soft & friendly, micro-animated.
+ * Same callable signature as the original.
+ *
+ * Visual upgrades:
+ *  • Hero coin wallet with animated count-up
+ *  • Quest card: gradient ring + animated progress + claim micro-bounce
+ *  • Avatar preview gets a soft halo + animated mint badge when owned
+ *  • Pill category tabs with sliding active state
+ *  • Cards: pill shape, soft shadow, shimmer ring on selected
+ */
 @Composable
 fun ShopScreen(
     userData: UserData,
@@ -40,463 +56,616 @@ fun ShopScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundLight)
+            .background(HydroBackground)
     ) {
         // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(BackgroundWhite)
-                .padding(16.dp, 20.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "💧",
-                fontSize = 20.sp
-            )
-            Text(
-                text = "Shop",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextDark
-            )
-            IconButton(onClick = onSettingsClick) {
-                Text("⚙️", fontSize = 20.sp)
+            Spacer(Modifier.width(44.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    "Reward yourself",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = HydroInk3,
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    "Shop",
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HydroInk,
+                    letterSpacing = (-0.4).sp,
+                )
             }
+            CircleIconBtn("⚙", onSettingsClick)
         }
 
-        // Content - Scrollable with LazyColumn
         val listState = rememberLazyListState()
         val coroutineScope = rememberCoroutineScope()
-        
-        // Scroll to category when selected
         LaunchedEffect(selectedCategory) {
-            // Scroll to top when category changes (filtering will show the right items)
-            coroutineScope.launch {
-                listState.animateScrollToItem(0)
-            }
+            coroutineScope.launch { listState.animateScrollToItem(0) }
         }
-        
+
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            // Progress Card
+            item { CoinWallet(coins = userData.coins) }
+
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = BackgroundWhite),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Complete 3 reminders",
-                                fontSize = 14.sp,
-                                color = TextDark
-                            )
-                            Surface(
-                                color = if (reminderCompletions >= 3) AccentGreen else Color(0xFFFEF3C7),
-                                shape = RoundedCornerShape(6.dp)
-                            ) {
-                                Text(
-                                    text = if (reminderCompletions >= 3) "Completed" else "In Progress",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (reminderCompletions >= 3) BackgroundWhite else Color(0xFF92400E),
-                                    modifier = Modifier.padding(4.dp, 8.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val progress = (reminderCompletions / 3f).coerceIn(0f, 1f)
-                        LinearProgressIndicator(
-                            progress = progress,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
-                            color = PrimaryBlue,
-                            trackColor = BorderLight
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "$reminderCompletions/3",
-                                fontSize = 12.sp,
-                                color = TextLight
-                            )
-                            if (reminderCompletions >= 3 && !reminderRewardClaimed) {
-                                Button(
-                                    onClick = onClaimReward,
-                                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
-                                    shape = RoundedCornerShape(6.dp),
-                                    modifier = Modifier.height(36.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
-                                ) {
-                                    Text(
-                                        "Claim Reward",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            } else if (reminderCompletions < 3) {
-                                Button(
-                                    onClick = { },
-                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                                    shape = RoundedCornerShape(6.dp),
-                                    modifier = Modifier.height(36.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
-                                ) {
-                                    Text(
-                                        "Keep Going",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "\$50 Coins",
-                            fontSize = 14.sp,
-                            color = TextDark
-                        )
-                    }
-                }
+                QuestCard(
+                    completions = reminderCompletions,
+                    target = 3,
+                    rewardClaimed = reminderRewardClaimed,
+                    onClaim = onClaimReward,
+                )
             }
 
-            // Coins Display
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = BackgroundWhite),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Your Coins:",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextDark
-                        )
-                        Text(
-                            text = "\$${userData.coins}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryBlue
-                        )
-                    }
-                }
+                AvatarShowcase(
+                    avatar = userData.selectedAvatar,
+                    label = shopItems.firstOrNull {
+                        it.icon == userData.selectedAvatar &&
+                            it.category == com.example.hydrohero.data.ShopCategory.AVATAR
+                    }?.name ?: "Selected avatar",
+                    isOwned = shopItems.firstOrNull {
+                        it.icon == userData.selectedAvatar &&
+                            it.category == com.example.hydrohero.data.ShopCategory.AVATAR
+                    }?.isOwned == true,
+                )
             }
-            
-            // Character Preview - Show selected avatar
+
             item {
-                val selectedAvatarItem = shopItems.find { it.icon == userData.selectedAvatar && it.category == com.example.hydrohero.data.ShopCategory.AVATAR }
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = BackgroundWhite),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(50.dp))
-                                .background(LightBlue),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(userData.selectedAvatar, fontSize = 60.sp)
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = selectedAvatarItem?.name ?: "Selected Avatar",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextDark
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (selectedAvatarItem?.isOwned == true) "Owned" else "Select in Shop",
-                            fontSize = 14.sp,
-                            color = TextLight
-                        )
-                    }
-                }
+                CategoryTabsRow(
+                    selected = selectedCategory,
+                    onSelect = onCategorySelected,
+                )
             }
-            
-            // Category Tabs
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    CategoryTab("All", selectedCategory == "All", onCategorySelected)
-                    CategoryTab("Avatars", selectedCategory == "Avatars", onCategorySelected)
-                    CategoryTab("Effects", selectedCategory == "Effects", onCategorySelected)
-                    CategoryTab("Backgrounds", selectedCategory == "Backgrounds", onCategorySelected)
-                }
-            }
-            
-            // Category Section Headers with Items
+
             when (selectedCategory) {
-                "Avatars" -> {
-                    item {
-                        CategorySection(
-                            title = "Avatars",
-                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.AVATAR },
-                            userData = userData,
-                            onItemClick = onItemClick
-                        )
-                    }
+                "Avatars" -> item {
+                    CategorySection("Avatars", shopItems.filter {
+                        it.category == com.example.hydrohero.data.ShopCategory.AVATAR
+                    }, userData, onItemClick)
                 }
-                "Effects" -> {
-                    item {
-                        CategorySection(
-                            title = "Effects",
-                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.EFFECT },
-                            userData = userData,
-                            onItemClick = onItemClick
-                        )
-                    }
+                "Effects" -> item {
+                    CategorySection("Effects", shopItems.filter {
+                        it.category == com.example.hydrohero.data.ShopCategory.EFFECT
+                    }, userData, onItemClick)
                 }
-                "Backgrounds" -> {
-                    item {
-                        CategorySection(
-                            title = "Backgrounds",
-                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.BACKGROUND },
-                            userData = userData,
-                            onItemClick = onItemClick
-                        )
-                    }
+                "Backgrounds" -> item {
+                    CategorySection("Backgrounds", shopItems.filter {
+                        it.category == com.example.hydrohero.data.ShopCategory.BACKGROUND
+                    }, userData, onItemClick)
                 }
                 else -> {
-                    // Show all categories
                     item {
-                        CategorySection(
-                            title = "Avatars",
-                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.AVATAR },
-                            userData = userData,
-                            onItemClick = onItemClick
-                        )
+                        CategorySection("Avatars", shopItems.filter {
+                            it.category == com.example.hydrohero.data.ShopCategory.AVATAR
+                        }, userData, onItemClick)
                     }
                     item {
-                        Spacer(modifier = Modifier.height(24.dp))
+                        CategorySection("Effects", shopItems.filter {
+                            it.category == com.example.hydrohero.data.ShopCategory.EFFECT
+                        }, userData, onItemClick)
                     }
                     item {
-                        CategorySection(
-                            title = "Effects",
-                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.EFFECT },
-                            userData = userData,
-                            onItemClick = onItemClick
-                        )
-                    }
-                    item {
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
-                    item {
-                        CategorySection(
-                            title = "Backgrounds",
-                            items = shopItems.filter { it.category == com.example.hydrohero.data.ShopCategory.BACKGROUND },
-                            userData = userData,
-                            onItemClick = onItemClick
-                        )
+                        CategorySection("Backgrounds", shopItems.filter {
+                            it.category == com.example.hydrohero.data.ShopCategory.BACKGROUND
+                        }, userData, onItemClick)
                     }
                 }
             }
 
-            // (Banner ad is shown globally in MainActivity above the bottom nav)
+            item { Spacer(Modifier.height(20.dp)) }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Coin wallet hero
+
+@Composable
+private fun CoinWallet(coins: Int) {
+    val animCoins by animateIntAsState(
+        targetValue = coins,
+        animationSpec = tween(700, easing = FastOutSlowInEasing),
+        label = "coins"
+    )
+    val infinite = rememberInfiniteTransition(label = "coinShine")
+    val shine by infinite.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "shine"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                Brush.horizontalGradient(
+                    0f to HydroAccentSun,
+                    1f to HydroAccentBlush,
+                )
+            )
+            .padding(20.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .scale(shine)
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(Color.White.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center,
+            ) { Text("🪙", fontSize = 32.sp) }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "YOUR COINS",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = HydroInk2,
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    "$animCoins",
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HydroInk,
+                    letterSpacing = (-1).sp,
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(HydroSurface.copy(alpha = 0.7f))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text("Earn more", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = HydroInk)
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Quest card
+
+@Composable
+private fun QuestCard(
+    completions: Int,
+    target: Int,
+    rewardClaimed: Boolean,
+    onClaim: () -> Unit,
+) {
+    val progress = (completions / target.toFloat()).coerceIn(0f, 1f)
+    val animProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(600, easing = FastOutSlowInEasing),
+        label = "qprog"
+    )
+    val complete = completions >= target
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(HydroSurface)
+            .border(1.dp, HydroLine, RoundedCornerShape(20.dp))
+            .padding(16.dp)
+    ) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(HydroPrimarySofter),
+                    contentAlignment = Alignment.Center,
+                ) { Text("🎯", fontSize = 18.sp) }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Daily quest",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HydroInk3,
+                        letterSpacing = 0.8.sp,
+                    )
+                    Text(
+                        "Complete 3 reminders",
+                        fontFamily = HydroDisplayFamily,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = HydroInk,
+                    )
+                }
+                AnimatedStatusPill(complete = complete, claimed = rewardClaimed)
+            }
+            Spacer(Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(HydroPrimarySoft),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(animProgress)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                0f to HydroPrimary,
+                                1f to HydroPrimaryDeep,
+                            )
+                        ),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "$completions / $target  •  +50 coins",
+                    fontSize = 12.sp,
+                    color = HydroInk2,
+                )
+                if (complete && !rewardClaimed) {
+                    ClaimButton(onClaim)
+                }
+            }
         }
     }
 }
 
 @Composable
-fun CategoryTab(
-    text: String,
-    isSelected: Boolean,
-    onClick: (String) -> Unit
-) {
+private fun AnimatedStatusPill(complete: Boolean, claimed: Boolean) {
+    val bg by animateColorAsState(
+        targetValue = when {
+            claimed -> HydroLine
+            complete -> HydroAccentMint
+            else -> HydroPrimarySofter
+        },
+        animationSpec = tween(300),
+        label = "statusBg"
+    )
+    val label = when {
+        claimed -> "Claimed"
+        complete -> "Ready!"
+        else -> "In progress"
+    }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = HydroInk)
+    }
+}
+
+@Composable
+private fun ClaimButton(onClaim: () -> Unit) {
+    val infinite = rememberInfiniteTransition(label = "claim")
+    val pulse by infinite.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(700, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "pulse"
+    )
     Surface(
-        onClick = { onClick(text) },
-        modifier = Modifier.clip(RoundedCornerShape(20.dp)),
-        color = if (isSelected) PrimaryBlue else BackgroundWhite,
-        shape = RoundedCornerShape(20.dp),
-        border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, BorderLight) else null
+        onClick = onClaim,
+        shape = RoundedCornerShape(14.dp),
+        color = HydroPrimaryDeep,
+        modifier = Modifier.scale(pulse),
     ) {
         Text(
-            text = text,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isSelected) BackgroundWhite else TextLight,
-            modifier = Modifier.padding(8.dp, 16.dp)
+            "Claim ✨",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
         )
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// Avatar showcase
+
+@Composable
+private fun AvatarShowcase(avatar: String, label: String, isOwned: Boolean) {
+    val infinite = rememberInfiniteTransition(label = "halo")
+    val haloScale by infinite.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "haloScale"
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(HydroSurface)
+            .border(1.dp, HydroLine, RoundedCornerShape(20.dp))
+            .padding(20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .scale(haloScale)
+                        .size(120.dp)
+                        .clip(RoundedCornerShape(60.dp))
+                        .background(HydroPrimarySofter),
+                )
+                Box(
+                    modifier = Modifier
+                        .size(96.dp)
+                        .clip(RoundedCornerShape(48.dp))
+                        .background(HydroPrimarySoft),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(avatar, fontSize = 56.sp)
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                label,
+                fontFamily = HydroDisplayFamily,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HydroInk,
+            )
+            Spacer(Modifier.height(4.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (isOwned) HydroAccentMint else HydroPrimarySofter)
+                    .padding(horizontal = 10.dp, vertical = 4.dp),
+            ) {
+                Text(
+                    text = if (isOwned) "✓ Owned" else "Equipped",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = HydroInk,
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Category tabs
+
+@Composable
+private fun CategoryTabsRow(selected: String, onSelect: (String) -> Unit) {
+    val tabs = listOf("All", "Avatars", "Effects", "Backgrounds")
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        tabs.forEach { CategoryTab(it, selected == it, onSelect) }
+    }
+}
+
+@Composable
+fun CategoryTab(text: String, isSelected: Boolean, onClick: (String) -> Unit) {
+    val bg by animateColorAsState(
+        targetValue = if (isSelected) HydroPrimaryDeep else HydroSurface,
+        animationSpec = tween(250),
+        label = "tabBg"
+    )
+    val fg by animateColorAsState(
+        targetValue = if (isSelected) Color.White else HydroInk2,
+        animationSpec = tween(250),
+        label = "tabFg"
+    )
+    Surface(
+        onClick = { onClick(text) },
+        color = bg,
+        shape = RoundedCornerShape(14.dp),
+        border = if (!isSelected) androidx.compose.foundation.BorderStroke(1.dp, HydroLine) else null,
+    ) {
+        Text(
+            text = text,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = fg,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Category section + item card
 
 @Composable
 fun CategorySection(
     title: String,
     items: List<ShopItem>,
     userData: UserData,
-    onItemClick: (ShopItem) -> Unit
+    onItemClick: (ShopItem) -> Unit,
 ) {
     Column {
         Text(
-            text = title,
-            fontSize = 18.sp,
+            text = title.uppercase(),
+            fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = TextDark,
-            modifier = Modifier.padding(bottom = 12.dp)
+            color = HydroInk3,
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(start = 4.dp, bottom = 10.dp),
         )
-        // Use a simple grid layout with Row and Column
         items.chunked(2).forEach { rowItems ->
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 rowItems.forEach { item ->
                     Box(modifier = Modifier.weight(1f)) {
-                        ShopItemCard(item = item, userData = userData, onClick = onItemClick)
+                        ShopItemCard(item, userData, onItemClick)
                     }
                 }
-                // Add spacer if odd number of items
-                if (rowItems.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+                if (rowItems.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
-            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
 
 @Composable
-fun ShopItemCard(
-    item: ShopItem,
-    userData: UserData,
-    onClick: (ShopItem) -> Unit
-) {
+fun ShopItemCard(item: ShopItem, userData: UserData, onClick: (ShopItem) -> Unit) {
     val isSelected = when (item.category) {
         com.example.hydrohero.data.ShopCategory.AVATAR -> item.icon == userData.selectedAvatar
         com.example.hydrohero.data.ShopCategory.BACKGROUND -> item.id == userData.selectedBackground
         com.example.hydrohero.data.ShopCategory.EFFECT -> item.icon == userData.selectedEffect
     }
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) HydroPrimaryDeep else HydroLine,
+        animationSpec = tween(300),
+        label = "cardBorder"
+    )
+    val borderWidth by animateFloatAsState(
+        targetValue = if (isSelected) 2f else 1f,
+        animationSpec = tween(300),
+        label = "borderW"
+    )
 
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(2.dp, if (isSelected) PrimaryBlue else BorderLight, RoundedCornerShape(12.dp)),
-        colors = CardDefaults.cardColors(containerColor = BackgroundWhite),
-        onClick = { onClick(item) }
+            .clip(RoundedCornerShape(18.dp))
+            .background(HydroSurface)
+            .border(borderWidth.dp, borderColor, RoundedCornerShape(18.dp))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF3F4F6))
+                    .height(110.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(HydroPrimarySofter),
+                contentAlignment = Alignment.Center,
             ) {
-                // Item icon
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                if (item.mascotId != null) {
+                    MascotById(item.mascotId, size = 80.dp)
+                } else {
                     Text(item.icon, fontSize = 48.sp)
                 }
-                
-                // Premium crown icon
                 if (item.isPremium) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(4.dp)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(HydroAccentSun)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
-                        Text(
-                            text = "👑",
-                            fontSize = 20.sp
-                        )
+                        Text("👑", fontSize = 12.sp)
+                    }
+                }
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(HydroAccentMint)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text("✓", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = HydroInk)
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = item.name,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TextDark
+                color = HydroInk,
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = if (item.price == 0) "Free" else "\$${item.price}",
-                fontSize = 16.sp,
+                text = if (item.price == 0) "Free" else "🪙 ${item.price}",
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (item.price == 0) AccentGreen else PrimaryBlue
+                color = if (item.price == 0) HydroInk else HydroPrimaryDeep,
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = { onClick(item) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isSelected,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = when {
-                        isSelected -> AccentGreen
-                        item.isPremium && !userData.isPremium && !item.isOwned -> Color(0xFFFFD700)
-                        item.isOwned -> BorderLight
-                        item.price == 0 -> AccentGreen
-                        else -> PrimaryBlue
-                    }
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = when {
-                        isSelected -> "Selected"
-                        item.isPremium && !userData.isPremium && !item.isOwned -> "Premium"
-                        item.isOwned -> "Select"
-                        item.price == 0 -> "Free"
-                        else -> "Buy"
-                    },
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = when {
-                        isSelected -> BackgroundWhite
-                        item.isPremium && !userData.isPremium && !item.isOwned -> TextDark
-                        item.isOwned -> TextLight
-                        item.price == 0 -> BackgroundWhite
-                        else -> BackgroundWhite
-                    }
-                )
-            }
+            Spacer(Modifier.height(8.dp))
+            ShopActionButton(item = item, isSelected = isSelected, isPremiumUser = userData.isPremium, onClick = { onClick(item) })
+        }
+    }
+}
+
+@Composable
+private fun ShopActionButton(
+    item: ShopItem,
+    isSelected: Boolean,
+    isPremiumUser: Boolean,
+    onClick: () -> Unit,
+) {
+    val (label, bg, fg) = when {
+        isSelected -> Triple("Selected", HydroAccentMint, HydroInk)
+        item.isPremium && !isPremiumUser && !item.isOwned -> Triple("Premium 👑", HydroAccentSun, HydroInk)
+        item.isOwned -> Triple("Select", HydroPrimarySofter, HydroPrimaryDeep)
+        item.price == 0 -> Triple("Get free", HydroPrimaryDeep, Color.White)
+        else -> Triple("Buy", HydroPrimaryDeep, Color.White)
+    }
+    Surface(
+        onClick = onClick,
+        enabled = !isSelected,
+        shape = RoundedCornerShape(12.dp),
+        color = bg,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Box(
+            modifier = Modifier.padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = fg)
+        }
+    }
+}
+
+@Composable
+private fun CircleIconBtn(label: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(22.dp),
+        color = HydroSurface,
+        modifier = Modifier.size(44.dp),
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(label, fontSize = 18.sp, color = HydroInk)
         }
     }
 }

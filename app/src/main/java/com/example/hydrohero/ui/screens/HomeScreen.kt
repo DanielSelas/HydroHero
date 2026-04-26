@@ -1,8 +1,12 @@
 package com.example.hydrohero.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -13,11 +17,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.hydrohero.data.UserData
+import com.example.hydrohero.ui.components.SplashMascot
+import com.example.hydrohero.ui.components.WaveBottle
 import com.example.hydrohero.ui.theme.*
 
+/**
+ * HydroHero — Home screen (soft & friendly redesign).
+ *
+ * Drop-in replacement for the existing HomeScreen. Signature is unchanged
+ * so MainActivity doesn't need edits.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     userData: UserData,
@@ -25,344 +39,414 @@ fun HomeScreen(
     onSettingsClick: () -> Unit,
     onSubscriptionClick: () -> Unit,
     onDailyProgressClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
+    val goalMl = userData.dailyGoal.coerceAtLeast(1)
+    val intakeMl = userData.currentIntake.coerceAtLeast(0)
+    val level = (intakeMl.toFloat() / goalMl.toFloat()).coerceIn(0f, 1f)
+    val remainingGlasses = ((goalMl - intakeMl).coerceAtLeast(0) / 250f).let {
+        kotlin.math.ceil(it).toInt()
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundLight)
+            .background(HydroSurface2)
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 120.dp),  // space for global banner ad + bottom nav
     ) {
-        // Header
+
+        // ─── Greeting header ───────────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(BackgroundWhite)
-                .padding(16.dp, 20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 22.dp)
+                .padding(top = 18.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "💧",
-                fontSize = 20.sp
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "GOOD MORNING",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = HydroInk3,
+                )
+                Text(
+                    text = "Hey, hero 💧",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = HydroInk,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+            CoinPill(
+                value = userData.coins,
+                modifier = Modifier.padding(end = 8.dp),
             )
-            Text(
-                text = "Home",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextDark
+            PremiumButton(
+                premium = userData.isPremium,
+                onClick = onSubscriptionClick,
             )
+            Spacer(Modifier.width(4.dp))
+            IconButton(onClick = onSettingsClick) {
+                Text("⚙️", fontSize = 18.sp)
+            }
+        }
+
+        // ─── Streak strip ──────────────────────────────────────
+        Card(
+            modifier = Modifier
+                .padding(horizontal = 22.dp, vertical = 4.dp)
+                .fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = HydroSurface),
+            border = BorderStroke(1.dp, HydroLine),
+            shape = RoundedCornerShape(18.dp),
+        ) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Subscription status/upgrade button
-                Surface(
-                    onClick = onSubscriptionClick,
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (userData.isPremium) Color(0xFFFFD700) else BackgroundWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, if (userData.isPremium) Color(0xFFFFD700) else BorderLight)
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .background(HydroCoralSoft),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = if (userData.isPremium) "👑" else "⭐",
-                            fontSize = 14.sp
-                        )
-                        Text(
-                            text = if (userData.isPremium) {
-                                when (userData.premiumType) {
-                                    "lifetime" -> "Premium"
-                                    else -> "Premium"
-                                }
-                            } else "Upgrade",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (userData.isPremium) TextDark else PrimaryBlue
+                    Text("🔥", fontSize = 14.sp)
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    buildAnnotatedStreakText(userData.streak),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = HydroInk2,
+                    modifier = Modifier.weight(1f),
+                )
+                Row {
+                    repeat(7) { i ->
+                        Box(
+                            Modifier
+                                .padding(start = 2.dp)
+                                .size(width = 6.dp, height = 14.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(
+                                    if (i < userData.streak) HydroPrimaryStrong
+                                    else HydroPrimarySoft
+                                )
                         )
                     }
                 }
-                IconButton(onClick = onSettingsClick) {
-                    Text("⚙️", fontSize = 20.sp)
-                }
             }
         }
-        
-        // Streak Display
+
+        // ─── Hero: bottle + numbers ────────────────────────────
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(BackgroundWhite)
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 22.dp)
+                .padding(top = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(Modifier.weight(1f)) {
                 Text(
-                    text = "🔥",
-                    fontSize = 24.sp
+                    "TODAY",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = HydroInk3,
                 )
-                Column {
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = "${userData.streak} Day Streak",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextDark
+                        text = "%.1f".format(intakeMl / 1000f),
+                        style = MaterialTheme.typography.displayLarge,
+                        color = HydroInk,
                     )
                     Text(
-                        text = if (userData.streak > 0) "Keep it up!" else "Start your streak today!",
-                        fontSize = 12.sp,
-                        color = TextLight
+                        text = " / ${goalMl / 1000}L",
+                        fontSize = 20.sp,
+                        color = HydroInk3,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(bottom = 8.dp),
                     )
                 }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = if (remainingGlasses > 0)
+                        "Just $remainingGlasses more glasses to unlock today's treat."
+                    else "Goal reached! ✨",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = HydroInk2,
+                )
             }
-            Text(
-                text = "💰 ${userData.coins}",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryBlue
+            WaveBottle(
+                level = level,
+                width = 120.dp,
+                height = 180.dp,
             )
         }
 
-        // Content
-        Column(
+        // ─── Quick log chips ───────────────────────────────────
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp)
-                // Extra padding so the bottom button never sits behind the global ad + bottom nav
-                .padding(bottom = 120.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 22.dp)
+                .padding(top = 22.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Journey Section
-            Text(
-                text = "Your Hydration Journey",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextDark,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            QuickChip("Small",  150, "🥃", Modifier.weight(1f)) { /* viewModel.addWater(150) */ }
+            QuickChip("Glass",  250, "🥛", Modifier.weight(1f)) { /* viewModel.addWater(250) */ }
+            QuickChip("Bottle", 500, "🍶", Modifier.weight(1f)) { /* viewModel.addWater(500) */ }
+        }
 
-            // Journey Card - with selected background
-            val backgroundColors = getBackgroundColors(userData.selectedBackground)
+        // ─── Big add-water CTA ─────────────────────────────────
+        Button(
+            onClick = onAddWaterClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp, vertical = 10.dp)
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = HydroPrimaryStrong),
+            shape = RoundedCornerShape(28.dp),
+        ) {
+            Text(
+                "＋  Log a drink",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+            )
+        }
+
+        // ─── Milestone card ────────────────────────────────────
+        SectionHeader("Next milestone", "Complete to earn coins")
+        Card(
+            modifier = Modifier
+                .padding(horizontal = 22.dp)
+                .fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = HydroSurface),
+            border = BorderStroke(1.dp, HydroLine),
+            shape = RoundedCornerShape(22.dp),
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(HydroPrimarySofter),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("🏆", fontSize = 26.sp)
+                }
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Hit 75% of your goal",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = HydroInk,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = (level / 0.75f).coerceIn(0f, 1f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = HydroPrimaryStrong,
+                        trackColor = HydroPrimarySoft,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(Modifier.fillMaxWidth()) {
+                        Text(
+                            "${(level * 100).toInt()}% / 75%",
+                            fontSize = 11.sp,
+                            color = HydroInk3,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            "+50 coins",
+                            fontSize = 11.sp,
+                            color = HydroGold,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+                }
+            }
+        }
+
+        // ─── Ad banner (only if not premium) ───────────────────
+        if (!userData.isPremium) {
             Box(
                 modifier = Modifier
+                    .padding(horizontal = 22.dp, vertical = 14.dp)
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = backgroundColors
-                        )
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(HydroSurface)
+                    .border(
+                        width = 1.dp,
+                        color = HydroLine,
+                        shape = RoundedCornerShape(18.dp),
                     )
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
+                    .padding(12.dp),
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Character - shows selected avatar
-                    val progressPercentage = if (userData.dailyGoal > 0) {
-                        (userData.currentIntake.toFloat() / userData.dailyGoal.toFloat() * 100f).coerceIn(0f, 100f)
-                    } else 0f
-                    
-                    val message = when {
-                        progressPercentage >= 100 -> "Goal Achieved!"
-                        progressPercentage >= 75 -> "Almost there!"
-                        progressPercentage >= 50 -> "You're doing great!"
-                        progressPercentage >= 25 -> "Keep going!"
-                        else -> "Let's start!"
-                    }
-
-                          val nextMilestoneHint = when {
-                              progressPercentage < 25f -> "Next: 25% → Start Your Day ✅"
-                              progressPercentage < 50f -> "Next: 50% → Midday Check ✅"
-                              progressPercentage < 75f -> "Next: 75% → Evening Wind-down ✅"
-                              progressPercentage < 100f -> "Next: 100% → Daily Goal 🎉"
-                              else -> "All milestones completed today ✅"
-                          }
-                    
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(60.dp))
-                            .background(LightBlue),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(userData.selectedAvatar, fontSize = 80.sp)
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Button(
-                        onClick = { },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (progressPercentage >= 100) PrimaryBlue else AccentGreen
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            message,
-                            color = BackgroundWhite,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                          Spacer(modifier = Modifier.height(12.dp))
-
-                          Text(
-                              text = nextMilestoneHint,
-                              fontSize = 12.sp,
-                              color = TextLight
-                          )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Progress Circle
-            val progress = if (userData.dailyGoal > 0) {
-                (userData.currentIntake.toFloat() / userData.dailyGoal.toFloat()).coerceIn(0f, 1f)
-            } else 0f
-            
-            // Calculate glasses based on daily goal (assuming 250ml per glass)
-            val glassesPerGoal = (userData.dailyGoal / 250f).toInt().coerceAtLeast(1)
-            val glassesProgress = if (userData.dailyGoal > 0) {
-                (userData.currentIntake / 250f).toInt().coerceAtMost(glassesPerGoal)
-            } else 0
-
-            Box(
-                modifier = Modifier.size(120.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(
-                    progress = progress,
-                    modifier = Modifier.size(120.dp),
-                    color = PrimaryBlue,
-                    strokeWidth = 12.dp,
-                    trackColor = BorderLight
-                )
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "$glassesProgress/$glassesPerGoal",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextDark
-                        )
-                        Text(
-                            text = "Glasses",
-                            fontSize = 12.sp,
-                            color = TextLight
-                        )
-                    }
-            }
-
-            // Celebration layer (persistent badge after confetti ends)
-            if (progress >= 1f) {
-                Spacer(modifier = Modifier.height(14.dp))
-                Surface(
-                    color = AccentGreen.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(999.dp)
-                ) {
-                    Text(
-                        text = "Goal Complete ✅",
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        color = AccentGreen,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(HydroPrimarySoft),
                     )
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "SPONSORED",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = HydroInk3,
+                        )
+                        Text(
+                            "Your banner ad slot",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = HydroInk,
+                        )
+                    }
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Add Water Button
-            Button(
-                onClick = onAddWaterClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryBlue
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    text = "+ Add Water",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BackgroundWhite
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = onDailyProgressClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryBlue)
-            ) {
-                Text(
-                    text = "View Daily Progress",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            // (Banner ad is shown globally in MainActivity above the bottom nav)
         }
+
+        Spacer(Modifier.height(4.dp))
+
+        OutlinedButton(
+            onClick = onDailyProgressClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp)
+                .height(48.dp),
+            shape = RoundedCornerShape(14.dp),
+            border = BorderStroke(1.dp, HydroLine),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = HydroPrimaryStrong),
+        ) {
+            Text(
+                "View daily progress",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+// ─── Small building blocks ─────────────────────────────────────
+
+@Composable
+private fun CoinPill(value: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(HydroGoldSoft)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(18.dp)
+                .clip(CircleShape)
+                .background(HydroGold),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "$",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFF5A3A10),
+            )
+        }
+        Spacer(Modifier.width(6.dp))
+        Text(
+            value.toString(),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = HydroInk,
+        )
     }
 }
 
 @Composable
-fun getBackgroundColors(backgroundId: String): List<Color> {
-    return when (backgroundId) {
-        "none" -> listOf(
-            Color(0xFFFFFFFF),
-            Color(0xFFFFFFFF)
+private fun PremiumButton(premium: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(if (premium) HydroGoldSoft else HydroSurface)
+            .border(
+                width = 1.dp,
+                color = if (premium) HydroGold else HydroLine,
+                shape = CircleShape,
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(if (premium) "👑" else "✨", fontSize = 16.sp)
+    }
+}
+
+@Composable
+private fun QuickChip(
+    label: String,
+    ml: Int,
+    icon: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(HydroSurface)
+            .border(1.dp, HydroLine, RoundedCornerShape(18.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(icon, fontSize = 22.sp)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            label,
+            fontSize = 11.sp,
+            color = HydroInk3,
+            fontWeight = FontWeight.SemiBold,
         )
-        "sea" -> listOf(
-            Color(0xFFE0F2FE), // Light blue
-            Color(0xFFBAE6FD)  // Lighter blue
-        )
-        "stars" -> listOf(
-            Color(0xFF1E1B4B), // Dark blue
-            Color(0xFF312E81)  // Darker blue
-        )
-        "rainbow" -> listOf(
-            Color(0xFFFFE5E5), // Light pink
-            Color(0xFFFFF4E5), // Light orange
-            Color(0xFFFFFBE5), // Light yellow
-            Color(0xFFE5FFE5), // Light green
-            Color(0xFFE5F5FF)  // Light blue
-        )
-        "sunset" -> listOf(
-            Color(0xFFFF6B6B), // Coral
-            Color(0xFFFFA07A)  // Light salmon
-        )
-        "forest" -> listOf(
-            Color(0xFFD4E4C5), // Light green
-            Color(0xFFB8D4A0)  // Medium green
-        )
-        "beach" -> listOf(
-            Color(0xFFFFF5E6), // Light sand
-            Color(0xFFFFE5CC)  // Light tan
-        )
-        else -> listOf(
-            Color(0xFFF0F9FF), // Default light blue
-            Color(0xFFE0F2FE)  // Default lighter blue
+        Text(
+            "${ml}ml",
+            fontSize = 13.sp,
+            color = HydroInk,
+            fontWeight = FontWeight.Bold,
         )
     }
 }
+
+@Composable
+private fun SectionHeader(title: String, subtitle: String?) {
+    Column(Modifier.padding(horizontal = 22.dp, vertical = 14.dp)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            color = HydroInk,
+        )
+        if (subtitle != null) {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = HydroInk3,
+            )
+        }
+    }
+}
+
+private fun buildAnnotatedStreakText(streak: Int) =
+    androidx.compose.ui.text.buildAnnotatedString {
+        pushStyle(androidx.compose.ui.text.SpanStyle(
+            color = HydroInk,
+            fontWeight = FontWeight.SemiBold,
+        ))
+        append("$streak-day streak")
+        pop()
+        append(" — keep it up!")
+    }
+
+// Keep your existing `getBackgroundColors(...)` helper — or replace with
+// Color.kt's HydroBg* lists let you drop emoji/backgrounds in later.

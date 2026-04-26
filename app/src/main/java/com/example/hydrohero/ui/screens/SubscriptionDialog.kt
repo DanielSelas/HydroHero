@@ -1,5 +1,6 @@
 package com.example.hydrohero.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -10,165 +11,105 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.hydrohero.data.UserData
 import com.example.hydrohero.ui.theme.*
 
+/**
+ * Subscription dialog — soft & friendly, micro-animated.
+ * Same callable signature as the original.
+ *
+ * Visual upgrades:
+ *  • Hero crown with gentle floating animation
+ *  • Animated "Best value" ribbon on lifetime
+ *  • Plan cards: pill-shaped, bordered, big price + period
+ *  • Feature rows with mint check chips
+ *  • Footer reassurance row (cancel anytime / privacy)
+ */
 @Composable
 fun SubscriptionDialog(
     userData: UserData,
     onDismiss: () -> Unit,
-    onUpgrade: (String) -> Unit, // "monthly" or "lifetime"
-    onCancelMonthly: () -> Unit = {}
+    onUpgrade: (String) -> Unit,
+    onCancelMonthly: () -> Unit = {},
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.9f),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = BackgroundWhite)
+                .fillMaxHeight(0.92f),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = HydroSurface),
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                item {
-                    Text(
-                        text = if (userData.isPremium) "👑 Premium Member" else "⭐ Upgrade to Premium",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextDark,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                    Text(
-                        text = if (userData.isPremium) {
-                            when (userData.premiumType) {
-                                "lifetime" -> "You have Lifetime Premium!"
-                                "monthly" -> "You have Monthly Premium!"
-                                else -> "You are Premium!"
-                            }
-                        } else {
-                            "Unlock all premium features"
-                        },
-                        fontSize = 16.sp,
-                        color = TextLight
-                    )
-                }
+                item { CrownHero(isPremium = userData.isPremium) }
+                item { TitleStack(userData) }
 
                 if (!userData.isPremium) {
                     item {
-                        SubscriptionOptionCard(
-                            title = "Monthly Premium",
+                        PlanCard(
+                            title = "Monthly",
                             price = "$0.99",
                             period = "per month",
                             features = listOf(
-                                "✨ All premium avatars",
-                                "🎨 All premium backgrounds",
-                                "✨ All premium effects",
-                                "🚫 Ad-free experience",
-                                "🔄 Cancel anytime"
+                                "All premium avatars",
+                                "All premium backgrounds",
+                                "All premium effects",
+                                "Ad-free experience",
+                                "Cancel anytime",
                             ),
                             isRecommended = false,
-                            onClick = { onUpgrade("monthly") }
+                            onClick = { onUpgrade("monthly") },
                         )
                     }
-
                     item {
-                        SubscriptionOptionCard(
-                            title = "Lifetime Premium",
+                        PlanCard(
+                            title = "Lifetime",
                             price = "$9.99",
                             period = "one-time",
                             features = listOf(
-                                "✨ All premium avatars",
-                                "🎨 All premium backgrounds",
-                                "✨ All premium effects",
-                                "🚫 Ad-free experience",
-                                "👑 Forever premium access"
+                                "Everything in Monthly",
+                                "Forever premium access",
+                                "No recurring charges",
+                                "Priority support",
+                                "Founder badge 🏅",
                             ),
                             isRecommended = true,
-                            onClick = { onUpgrade("lifetime") }
+                            onClick = { onUpgrade("lifetime") },
                         )
                     }
+                    item { ReassuranceRow() }
                 } else {
-                    item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            colors = CardDefaults.cardColors(containerColor = LightBlue),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(20.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "Current Plan",
-                                    fontSize = 14.sp,
-                                    color = TextLight,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                                Text(
-                                    text = when (userData.premiumType) {
-                                        "lifetime" -> "Lifetime Premium"
-                                        "monthly" -> "Monthly Premium"
-                                        else -> "Premium"
-                                    },
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextDark
-                                )
-                            }
-                        }
-                    }
-
-                    // Cancel monthly subscription (prototype)
+                    item { CurrentPlanCard(userData) }
                     if (userData.premiumType == "monthly") {
-                        item {
-                            Button(
-                                onClick = onCancelMonthly,
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B6B)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    text = "Cancel Monthly Subscription",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = BackgroundWhite,
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-                            }
-                            Text(
-                                text = "You’ll return to the free plan (ads + limits).",
-                                fontSize = 12.sp,
-                                color = TextLight,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
-                        }
+                        item { CancelMonthlyButton(onCancelMonthly) }
                     }
                 }
 
                 item {
-                    Button(
+                    OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, HydroLine),
                     ) {
                         Text(
-                            text = if (userData.isPremium) "Close" else "Maybe Later",
-                            fontSize = 16.sp,
+                            text = if (userData.isPremium) "Close" else "Maybe later",
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            color = HydroInk2,
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
                 }
@@ -177,6 +118,305 @@ fun SubscriptionDialog(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun CrownHero(isPremium: Boolean) {
+    val infinite = rememberInfiniteTransition(label = "crownFloat")
+    val float by infinite.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "float"
+    )
+    val scale by infinite.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "scale"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(110.dp)
+            .clip(RoundedCornerShape(55.dp))
+            .background(
+                Brush.verticalGradient(
+                    0f to HydroAccentSun,
+                    1f to HydroAccentBlush,
+                )
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = if (isPremium) "👑" else "✨",
+            fontSize = 56.sp,
+            modifier = Modifier
+                .scale(scale)
+                .offset(y = float.dp),
+        )
+    }
+}
+
+@Composable
+private fun TitleStack(userData: UserData) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = if (userData.isPremium) "You're premium" else "Go premium",
+            fontFamily = HydroDisplayFamily,
+            fontSize = 26.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = HydroInk,
+            letterSpacing = (-0.6).sp,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = if (userData.isPremium) {
+                when (userData.premiumType) {
+                    "lifetime" -> "Lifetime · thanks for being a founder 💛"
+                    "monthly" -> "Monthly · welcome to the club"
+                    else -> "Welcome to premium"
+                }
+            } else {
+                "Unlock everything. Support a tiny indie app."
+            },
+            fontSize = 13.sp,
+            color = HydroInk2,
+        )
+    }
+}
+
+@Composable
+private fun PlanCard(
+    title: String,
+    price: String,
+    period: String,
+    features: List<String>,
+    isRecommended: Boolean,
+    onClick: () -> Unit,
+) {
+    val borderColor = if (isRecommended) HydroPrimaryDeep else HydroLine
+    val borderWidth = if (isRecommended) 2.dp else 1.dp
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(if (isRecommended) HydroPrimarySofter else HydroSurface)
+            .border(borderWidth, borderColor, RoundedCornerShape(20.dp))
+            .padding(18.dp)
+    ) {
+        Column {
+            if (isRecommended) {
+                AnimatedRibbon()
+                Spacer(Modifier.height(10.dp))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                Column {
+                    Text(
+                        text = title,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HydroInk3,
+                        letterSpacing = 1.sp,
+                    )
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = price,
+                            fontFamily = HydroDisplayFamily,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = HydroPrimaryDeep,
+                            letterSpacing = (-1).sp,
+                        )
+                        Text(
+                            text = "  $period",
+                            fontSize = 12.sp,
+                            color = HydroInk3,
+                            modifier = Modifier.padding(bottom = 6.dp),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            features.forEach { f ->
+                Row(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(HydroAccentMint),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("✓", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = HydroInk)
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Text(f, fontSize = 13.sp, color = HydroInk)
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            Button(
+                onClick = onClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isRecommended) HydroPrimaryDeep else HydroPrimary,
+                ),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Text(
+                    text = if (isRecommended) "Get lifetime" else "Subscribe",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnimatedRibbon() {
+    val infinite = rememberInfiniteTransition(label = "ribbon")
+    val pulse by infinite.animateFloat(
+        initialValue = 0.97f,
+        targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "pulse"
+    )
+    Box(
+        modifier = Modifier
+            .scale(pulse)
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                Brush.horizontalGradient(
+                    0f to HydroAccentSun,
+                    1f to HydroAccentBlush,
+                )
+            )
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(
+            "★ BEST VALUE · SAVE 90%",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = HydroInk,
+            letterSpacing = 1.sp,
+        )
+    }
+}
+
+@Composable
+private fun ReassuranceRow() {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        ReassuranceItem("🔒", "Secure")
+        ReassuranceItem("↻", "Cancel\nanytime")
+        ReassuranceItem("💛", "Indie\nbuilt")
+    }
+}
+
+@Composable
+private fun ReassuranceItem(emoji: String, label: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(HydroBackground)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(emoji, fontSize = 16.sp)
+            Spacer(Modifier.width(6.dp))
+            Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = HydroInk2, lineHeight = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun CurrentPlanCard(userData: UserData) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                Brush.verticalGradient(
+                    0f to HydroPrimarySofter,
+                    1f to HydroPrimarySoft,
+                )
+            )
+            .padding(20.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "CURRENT PLAN",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = HydroInk3,
+                letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = when (userData.premiumType) {
+                    "lifetime" -> "Lifetime Premium"
+                    "monthly" -> "Monthly Premium"
+                    else -> "Premium"
+                },
+                fontFamily = HydroDisplayFamily,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HydroPrimaryDeep,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CancelMonthlyButton(onCancel: () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = onCancel,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            border = androidx.compose.foundation.BorderStroke(1.5.dp, HydroCoral),
+        ) {
+            Text(
+                "Cancel monthly subscription",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HydroCoral,
+                modifier = Modifier.padding(vertical = 4.dp),
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "You'll return to the free plan (ads + limits).",
+            fontSize = 11.sp,
+            color = HydroInk3,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+    }
+}
+
+// Compatibility shim — the original public composable is kept callable.
 @Composable
 fun SubscriptionOptionCard(
     title: String,
@@ -184,110 +424,7 @@ fun SubscriptionOptionCard(
     period: String,
     features: List<String>,
     isRecommended: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .border(
-                width = if (isRecommended) 2.dp else 1.dp,
-                color = if (isRecommended) PrimaryBlue else BorderLight,
-                shape = RoundedCornerShape(16.dp)
-            ),
-        colors = CardDefaults.cardColors(containerColor = BackgroundWhite),
-        onClick = onClick
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
-        ) {
-            // Recommended badge
-            if (isRecommended) {
-                Surface(
-                    color = PrimaryBlue,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.padding(bottom = 12.dp)
-                ) {
-                    Text(
-                        text = "⭐ BEST VALUE",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = BackgroundWhite,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = title,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextDark,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        Text(
-                            text = price,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryBlue
-                        )
-                        Text(
-                            text = period,
-                            fontSize = 12.sp,
-                            color = TextLight,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Features list
-            features.forEach { feature ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = feature,
-                        fontSize = 14.sp,
-                        color = TextDark
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Subscribe button
-            Button(
-                onClick = onClick,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRecommended) PrimaryBlue else AccentGreen
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "Subscribe",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-            }
-        }
-    }
+    PlanCard(title, price, period, features, isRecommended, onClick)
 }

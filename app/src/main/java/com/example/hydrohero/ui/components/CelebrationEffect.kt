@@ -1,245 +1,139 @@
 package com.example.hydrohero.ui.components
 
 import androidx.compose.animation.core.*
-import kotlinx.coroutines.delay
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.example.hydrohero.ui.theme.*
-import kotlinx.coroutines.launch
-import nl.dionsegijn.konfetti.compose.KonfettiView
-import nl.dionsegijn.konfetti.core.*
-import nl.dionsegijn.konfetti.core.emitter.Emitter
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.delay
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.random.Random
 
+/**
+ * Re-styled celebration overlays — soft & friendly aesthetic.
+ *
+ * Same signatures as the originals:
+ *   CelebrationOverlay(show, effectIcon, onDismiss)
+ *   StarConfettiEffect()
+ *   ProgressFeedbackOverlay(show, message, onDismiss)
+ *   CoinsEarnedOverlay(show, amount, onDismiss)
+ *
+ * Changes: gentle pastel confetti instead of hard primary stars, mascot droplet
+ * pop-in, and a soft "you did it" pill in the brand display face.
+ */
 @Composable
 fun CelebrationOverlay(
     show: Boolean,
-    effectIcon: String, // Effect icon to display
-    onDismiss: () -> Unit
+    effectIcon: String,
+    onDismiss: () -> Unit,
 ) {
-    if (show) {
-        LaunchedEffect(show) {
-            delay(4000)
-            onDismiss()
-        }
-        
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-        ) {
-            // Star confetti effect in background
-            StarConfettiEffect()
-            
-            // Also add Konfetti for extra effect (reduced particles to prevent OutOfMemoryError)
-            KonfettiView(
-                parties = listOf(
-                    Party(
-                        speed = 0f,
-                        maxSpeed = 50f,
-                        damping = 0.9f,
-                        angle = Angle.BOTTOM,
-                        spread = Spread.WIDE,
-                        colors = listOf(
-                            Color(0xFF4A90E2).toArgb(),
-                            Color(0xFF50C878).toArgb(),
-                            Color(0xFFFFD700).toArgb(),
-                            Color(0xFFFF6B6B).toArgb(),
-                            Color(0xFF9B59B6).toArgb()
-                        ),
-                        position = Position.Relative(0.5, 0.0),
-                        emitter = Emitter(duration = 300, TimeUnit.MILLISECONDS).max(50), // Reduced from 300 to 50
-                        timeToLive = 4000
-                    ),
-                    Party(
-                        speed = 0f,
-                        maxSpeed = 50f,
-                        damping = 0.9f,
-                        angle = Angle.TOP,
-                        spread = Spread.WIDE,
-                        colors = listOf(
-                            Color(0xFF4A90E2).toArgb(),
-                            Color(0xFF50C878).toArgb(),
-                            Color(0xFFFFD700).toArgb(),
-                            Color(0xFFFF6B6B).toArgb(),
-                            Color(0xFF9B59B6).toArgb()
-                        ),
-                        position = Position.Relative(0.5, 1.0),
-                        emitter = Emitter(duration = 300, TimeUnit.MILLISECONDS).max(50), // Reduced from 300 to 50
-                        timeToLive = 4000
-                    )
-                ),
-                modifier = Modifier.fillMaxSize()
-            )
-            
-            // Avatar in center with celebration message
-            Column(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                val infiniteTransition = rememberInfiniteTransition(label = "celebration")
-                
-                val scale by infiniteTransition.animateFloat(
-                    initialValue = 0.9f,
-                    targetValue = 1.1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(800, easing = FastOutSlowInEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "scale"
-                )
-                
-                val alpha by infiniteTransition.animateFloat(
-                    initialValue = 0.8f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(1000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "alpha"
-                )
-                
-                      // Effect icon
-                      Box(
-                          modifier = Modifier
-                              .size(200.dp)
-                              .scale(scale)
-                              .alpha(alpha)
-                              .clip(RoundedCornerShape(100.dp))
-                              .background(LightBlue),
-                          contentAlignment = Alignment.Center
-                      ) {
-                          Text(effectIcon, fontSize = 120.sp)
-                      }
-                
-                // Celebration message
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "🎉 Goal Achieved!",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF4A90E2),
-                        modifier = Modifier.alpha(alpha)
-                    )
-                    Text(
-                        text = "You've reached your daily hydration goal!",
-                        fontSize = 18.sp,
-                        color = BackgroundWhite,
-                        modifier = Modifier.alpha(alpha)
-                    )
-                }
-            }
-        }
+    if (!show) return
+    LaunchedEffect(show) {
+        delay(3500)
+        onDismiss()
     }
-}
 
-@Composable
-fun StarConfettiEffect() {
-    val density = LocalDensity.current
-    var screenSize by remember { mutableStateOf(IntSize.Zero) }
-    val starIcons = listOf("⭐", "✨", "🌟", "💫", "⭐")
-    val starCount = 50 // Reduced from 150 to 50 to prevent OutOfMemoryError
-    
-    val stars = remember {
-        List(starCount) {
-            StarAnimationData(
-                startX = Random.nextFloat(),
-                startY = -0.1f,
-                rotation = Random.nextFloat() * 360f,
-                size = Random.nextFloat() * 0.03f + 0.02f,
-                duration = Random.nextLong(3000, 6000)
-            )
-        }
-    }
-    
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .onGloballyPositioned { coordinates ->
-                screenSize = coordinates.size
-            }
+            .background(Color.Black.copy(alpha = 0.32f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center,
     ) {
-        // Render stars in batches to reduce memory usage
-        stars.chunked(10).forEachIndexed { batchIndex, batch ->
-            batch.forEachIndexed { index, starData ->
-                val globalIndex = batchIndex * 10 + index
-                val infiniteTransition = rememberInfiniteTransition(label = "star_$globalIndex")
-                
-                val y by infiniteTransition.animateFloat(
-                    initialValue = starData.startY,
-                    targetValue = 1.2f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(
-                            durationMillis = starData.duration.toInt(),
-                            easing = LinearEasing
-                        ),
-                        repeatMode = RepeatMode.Restart
-                    ),
-                    label = "y_$globalIndex"
+        // Pastel confetti behind everything
+        SoftConfetti(particleCount = 28)
+
+        // Center hero card
+        val infinite = rememberInfiniteTransition(label = "celebrate")
+        val scale by infinite.animateFloat(
+            initialValue = 0.96f,
+            targetValue = 1.04f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1400, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "scale",
+        )
+        val popIn = remember { Animatable(0.4f) }
+        LaunchedEffect(Unit) {
+            popIn.animateTo(
+                1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow,
                 )
-                
-                val rotation by infiniteTransition.animateFloat(
-                    initialValue = starData.rotation,
-                    targetValue = starData.rotation + 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(
-                            durationMillis = 2000,
-                            easing = LinearEasing
-                        ),
-                        repeatMode = RepeatMode.Restart
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .scale(popIn.value)
+                .padding(horizontal = 32.dp),
+        ) {
+            // Mascot
+            Box(
+                modifier = Modifier
+                    .size(180.dp)
+                    .scale(scale)
+                    .clip(RoundedCornerShape(90.dp))
+                    .background(
+                        Brush.radialGradient(
+                            0f to HydroPrimarySofter,
+                            1f to HydroPrimary.copy(alpha = 0.35f),
+                        )
                     ),
-                    label = "rotation_$globalIndex"
+                contentAlignment = Alignment.Center,
+            ) {
+                // Use the existing mascot if you have it imported — otherwise emoji
+                Text(
+                    effectIcon.ifEmpty { "💧" },
+                    fontSize = 110.sp,
                 )
-                
-                val calculatedAlpha = when {
-                    y < 0 -> 0f
-                    y > 1f -> 0f
-                    else -> 1f
-                }
-                
-                if (screenSize.width > 0 && screenSize.height > 0 && y >= -0.1f && y <= 1.1f) {
+            }
+
+            Spacer(Modifier.height(22.dp))
+
+            // Title pill
+            Surface(
+                shape = RoundedCornerShape(22.dp),
+                color = HydroSurface,
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     Text(
-                        text = starIcons[globalIndex % starIcons.size],
-                        fontSize = with(density) { 
-                            (screenSize.height * starData.size).toDp().toSp() 
-                        },
-                        modifier = Modifier
-                            .offset(
-                                x = with(density) { 
-                                    (screenSize.width * starData.startX).toDp() 
-                                },
-                                y = with(density) { 
-                                    (screenSize.height * y).toDp() 
-                                }
-                            )
-                            .rotate(rotation)
-                            .alpha(calculatedAlpha),
-                        color = Color.White
+                        text = "Goal reached!",
+                        fontFamily = HydroDisplayFamily,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = HydroInk,
+                        letterSpacing = (-0.4).sp,
+                    )
+                    Text(
+                        text = "You hit your hydration goal — nice sip 🎉",
+                        fontSize = 13.sp,
+                        color = HydroInk2,
                     )
                 }
             }
@@ -247,79 +141,178 @@ fun StarConfettiEffect() {
     }
 }
 
-data class StarAnimationData(
-    val startX: Float,
-    val startY: Float,
-    val rotation: Float,
+// ─────────────────────────────────────────────────────────────────────
+// Soft confetti (pastel circles & droplets falling with gentle drift)
+
+@Composable
+fun StarConfettiEffect() {
+    SoftConfetti(particleCount = 22)
+}
+
+@Composable
+private fun SoftConfetti(particleCount: Int) {
+    val density = LocalDensity.current
+    var size by remember { mutableStateOf(IntSize.Zero) }
+
+    val palette = listOf(
+        HydroPrimary,
+        HydroPrimaryDeep,
+        HydroAccentMint,
+        HydroAccentSun,
+        HydroAccentBlush,
+    )
+
+    val particles = remember(particleCount) {
+        List(particleCount) { idx ->
+            ConfettiParticle(
+                seed = idx,
+                color = palette[idx % palette.size],
+                xPct = Random.nextFloat(),
+                size = Random.nextFloat() * 10f + 8f,
+                rotateSpeed = Random.nextFloat() * 2f + 0.5f,
+                fallDuration = Random.nextInt(2400, 3800),
+                delay = Random.nextInt(0, 1000),
+                kind = if (idx % 3 == 0) ConfettiKind.Drop else ConfettiKind.Circle,
+            )
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onSizeChanged { size = it }
+    ) {
+        if (size.height > 0) {
+            particles.forEach { p ->
+                FallingConfetti(particle = p, height = size.height, density = density)
+            }
+        }
+    }
+}
+
+private enum class ConfettiKind { Circle, Drop }
+
+private data class ConfettiParticle(
+    val seed: Int,
+    val color: Color,
+    val xPct: Float,
     val size: Float,
-    val duration: Long
+    val rotateSpeed: Float,
+    val fallDuration: Int,
+    val delay: Int,
+    val kind: ConfettiKind,
 )
+
+@Composable
+private fun FallingConfetti(
+    particle: ConfettiParticle,
+    height: Int,
+    density: androidx.compose.ui.unit.Density,
+) {
+    val anim = remember { Animatable(0f) }
+    LaunchedEffect(particle.seed) {
+        delay(particle.delay.toLong())
+        anim.animateTo(
+            1f,
+            animationSpec = tween(
+                durationMillis = particle.fallDuration,
+                easing = LinearEasing,
+            )
+        )
+    }
+    val infinite = rememberInfiniteTransition(label = "rot${particle.seed}")
+    val rot by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f * particle.rotateSpeed,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing)
+        ),
+        label = "r",
+    )
+
+    val driftX = sin((anim.value * 6f).toDouble()).toFloat() * 18f
+    val px = (particle.xPct * 360f).dp // approximate; will be clipped to screen
+    val py = with(density) { (height.toFloat() * anim.value).toDp() }
+
+    Box(
+        modifier = Modifier
+            .offset(x = px + driftX.dp, y = py - 60.dp)
+            .size(particle.size.dp)
+            .rotate(rot),
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            when (particle.kind) {
+                ConfettiKind.Circle -> drawCircle(color = particle.color)
+                ConfettiKind.Drop -> {
+                    val w = this.size.width
+                    val h = this.size.height
+                    val path = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(w / 2f, 0f)
+                        cubicTo(w, h * 0.4f, w * 0.85f, h, w / 2f, h)
+                        cubicTo(w * 0.15f, h, 0f, h * 0.4f, w / 2f, 0f)
+                        close()
+                    }
+                    drawPath(path, color = particle.color)
+                }
+            }
+        }
+    }
+}
+
+// (onSizeChanged is imported directly — no wrapper needed)
+
+// ─────────────────────────────────────────────────────────────────────
+// Smaller toast-style overlays
 
 @Composable
 fun ProgressFeedbackOverlay(
     show: Boolean,
     message: String,
-    effectIcon: String, // Effect icon to display
-    onDismiss: () -> Unit
+    effectIcon: String,
+    onDismiss: () -> Unit,
 ) {
-    if (show) {
-        LaunchedEffect(show) {
-            delay(2000)
-            onDismiss()
-        }
-        
-        Box(
+    if (!show) return
+    LaunchedEffect(show) {
+        delay(1800)
+        onDismiss()
+    }
+    val popIn = remember { Animatable(0.7f) }
+    LaunchedEffect(Unit) {
+        popIn.animateTo(
+            1f,
+            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        )
+    }
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Surface(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.2f)),
-            contentAlignment = Alignment.Center
+                .padding(top = 80.dp)
+                .scale(popIn.value),
+            shape = RoundedCornerShape(28.dp),
+            color = HydroSurface,
+            tonalElevation = 0.dp,
         ) {
-            val infiniteTransition = rememberInfiniteTransition(label = "progress")
-            
-            val scale by infiniteTransition.animateFloat(
-                initialValue = 0.95f,
-                targetValue = 1.05f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(600, easing = FastOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "scale"
-            )
-            
-            val alpha by infiniteTransition.animateFloat(
-                initialValue = 0.7f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(800, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "alpha"
-            )
-            
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            Row(
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                      // Effect icon
-                      Box(
-                          modifier = Modifier
-                              .size(150.dp)
-                              .scale(scale)
-                              .alpha(alpha)
-                              .clip(RoundedCornerShape(75.dp))
-                              .background(LightBlue),
-                          contentAlignment = Alignment.Center
-                      ) {
-                          Text(effectIcon, fontSize = 90.sp)
-                      }
-                
-                // Feedback message
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(HydroPrimarySofter),
+                    contentAlignment = Alignment.Center,
+                ) { Text(effectIcon.ifEmpty { "💧" }, fontSize = 16.sp) }
+                Spacer(Modifier.width(10.dp))
                 Text(
                     text = message,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = BackgroundWhite,
-                    modifier = Modifier.alpha(alpha)
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HydroInk,
                 )
             }
         }
@@ -331,65 +324,51 @@ fun CoinsEarnedOverlay(
     show: Boolean,
     amount: Int,
     subtitle: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
-    if (show) {
-        LaunchedEffect(show) {
-            delay(2000)
-            onDismiss()
-        }
-        
-        Box(
+    if (!show) return
+    LaunchedEffect(show) {
+        delay(1600)
+        onDismiss()
+    }
+    val anim = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        anim.animateTo(1f, tween(400, easing = FastOutSlowInEasing))
+    }
+    val rise = (1f - anim.value) * 30f
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Surface(
             modifier = Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.TopCenter
+                .padding(top = 130.dp)
+                .offset(y = rise.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = HydroAccentSun,
         ) {
-            val infiniteTransition = rememberInfiniteTransition(label = "coins")
-            
-            val yOffset by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = -100f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(2000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
-                ),
-                label = "yOffset"
-            )
-            
-            val alpha by infiniteTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 0f,
-                animationSpec = infiniteRepeatable(
-                    animation = keyframes {
-                        durationMillis = 2000
-                        1.0f at 0
-                        1.0f at 1000
-                        0.0f at 2000
-                    },
-                    repeatMode = RepeatMode.Restart
-                ),
-                label = "alpha"
-            )
-            
             Column(
-                modifier = Modifier
-                    .offset(y = yOffset.dp)
-                    .alpha(alpha)
-                    .padding(top = 100.dp),
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    text = "💰 +$amount Coins!",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFFD700)
-                )
-                Text(
-                    text = subtitle,
-                    fontSize = 18.sp,
-                    color = BackgroundWhite
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🪙", fontSize = 20.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "+$amount",
+                        fontFamily = HydroDisplayFamily,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HydroInk,
+                    )
+                }
+                if (subtitle.isNotEmpty()) {
+                    Text(
+                        text = subtitle,
+                        fontSize = 11.sp,
+                        color = HydroInk2,
+                    )
+                }
             }
         }
     }

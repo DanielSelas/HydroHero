@@ -1,7 +1,14 @@
 package com.example.hydrohero.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -20,6 +29,18 @@ import androidx.compose.ui.unit.sp
 import com.example.hydrohero.data.UserData
 import com.example.hydrohero.ui.theme.*
 
+/**
+ * Settings screen — soft & friendly, micro-animated.
+ *
+ * Same callable signature as the original. Visual upgrades:
+ *  • Hero "daily goal" card with stepper, animated ml number, glasses count
+ *  • Sectioned cards with caps section labels (matches Progress screen)
+ *  • Each row has a small icon bubble in HydroPrimarySofter
+ *  • Toggles use HydroPrimaryDeep
+ *  • Reset/Crash rows in coral
+ *  • Footer stamp with version + tagline
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     userData: UserData,
@@ -41,460 +62,466 @@ fun SettingsScreen(
     onShareApp: () -> Unit,
     onOpenPrivacyPolicy: () -> Unit,
     onOpenTermsOfService: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var showContact by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundLight)
+            .background(HydroBackground)
     ) {
         // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(BackgroundWhite)
-                .padding(16.dp, 20.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = onBackClick) {
-                Text("←", fontSize = 20.sp, color = PrimaryBlue)
+            CircleIconButton("←", onBackClick)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    "Tune your hydration",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = HydroInk3,
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    "Settings",
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HydroInk,
+                    letterSpacing = (-0.4).sp,
+                )
             }
-            Text(
-                text = "💧",
-                fontSize = 20.sp
-            )
-            Text(
-                text = "Settings",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextDark
-            )
-            Spacer(modifier = Modifier.width(40.dp))
+            Spacer(Modifier.width(44.dp))
         }
 
-        // Content
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp)
-                .padding(bottom = 140.dp)
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 140.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            // Daily Goal Section
-            SettingsCard(
-                title = "Daily Water Goal",
-                subtitle = "Set your daily hydration target"
-            ) {
-                var goalText by remember { mutableStateOf(userData.dailyGoal.toString()) }
-                var isEditing by remember { mutableStateOf(false) }
-                
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (isEditing) {
-                        OutlinedTextField(
-                            value = goalText,
-                            onValueChange = { 
-                                if (it.all { char -> char.isDigit() }) {
-                                    goalText = it
-                                }
-                            },
-                            label = { Text("Daily Goal (ml)") },
-                            suffix = { Text("ml", color = TextLight) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color(0xFF000000),
-                                unfocusedTextColor = Color(0xFF000000),
-                                cursorColor = PrimaryBlue
-                            ),
-                            textStyle = androidx.compose.ui.text.TextStyle(
-                                fontSize = 16.sp,
-                                color = Color(0xFF000000)
-                            )
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Button(
-                                onClick = {
-                                    val newGoal = goalText.toIntOrNull() ?: userData.dailyGoal
-                                    if (newGoal > 0) {
-                                        onGoalChange(newGoal)
-                                    }
-                                    isEditing = false
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Save", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                            }
-                            Button(
-                                onClick = {
-                                    goalText = userData.dailyGoal.toString()
-                                    isEditing = false
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE0E0E0)),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text("Cancel", fontSize = 14.sp, color = TextDark, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                    } else {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFFF9FAFB), RoundedCornerShape(8.dp))
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = "${userData.dailyGoal} ml",
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextDark
-                                )
-                                Text(
-                                    text = "${(userData.dailyGoal / 250f).toInt()} Glasses",
-                                    fontSize = 14.sp,
-                                    color = TextLight
-                                )
-                            }
-                            Button(
-                                onClick = { isEditing = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    "Edit",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    }
+            DailyGoalHero(currentGoal = userData.dailyGoal, onGoalChange = onGoalChange)
+
+            SoftSection(label = "NOTIFICATIONS") {
+                IconRow(emoji = "🔔", title = "Enable notifications") {
+                    SoftSwitch(checked = notificationsEnabled, onToggle = onToggleNotifications)
+                }
+                Divider()
+                IconRow(emoji = "🔊", title = "Sound alerts") {
+                    SoftSwitch(checked = soundEnabled, onToggle = onToggleSound)
+                }
+                Divider()
+                IconRow(emoji = "📳", title = "Vibration") {
+                    SoftSwitch(checked = vibrationEnabled, onToggle = onToggleVibration)
+                }
+                Divider()
+                IconRow(emoji = "🌙", title = "Quiet hours", subtitle = "10pm – 7am") {
+                    SoftSwitch(checked = quietHoursEnabled, onToggle = onToggleQuietHours)
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Notification Settings
-            SettingsCard(
-                title = "Notification Settings",
-                subtitle = "Manage how and when you receive reminders"
-            ) {
-                SettingsToggleItem(
-                    label = "Enable Notifications",
-                    isChecked = notificationsEnabled,
-                    onToggle = onToggleNotifications
-                )
-                SettingsToggleItem(
-                    label = "Sound Alerts",
-                    isChecked = soundEnabled,
-                    onToggle = onToggleSound
-                )
-                SettingsToggleItem(
-                    label = "Vibration",
-                    isChecked = vibrationEnabled,
-                    onToggle = onToggleVibration
-                )
-                SettingsToggleItem(
-                    label = "Quiet Hours",
-                    isChecked = quietHoursEnabled,
-                    onToggle = onToggleQuietHours
-                )
+            SoftSection(label = "DISPLAY") {
+                IconRow(emoji = "📐", title = "Units") {
+                    Text("Glasses", fontSize = 13.sp, color = HydroInk3)
+                }
+                Divider()
+                IconRow(emoji = "🎨", title = "Theme") {
+                    Text("Light", fontSize = 13.sp, color = HydroInk3)
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Display Preferences
-            SettingsCard(
-                title = "Display Preferences",
-                subtitle = "Customize how information is shown"
-            ) {
-                SettingsTextItem("Units", "Glasses")
-                SettingsTextItem("Theme", "Light")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Account Section
-            SettingsCard(
-                title = "Account",
-                subtitle = "Manage your account and data"
-            ) {
-                SettingsToggleItem(
-                    label = "Sync Data",
-                    isChecked = syncEnabled,
-                    onToggle = onToggleSync
-                )
-                SettingsButtonItem(
-                    label = "Export Data",
-                    onClick = onExportData,
-                    isDestructive = false
-                )
-                SettingsButtonItem(
-                    label = "Reset Progress",
+            SoftSection(label = "ACCOUNT") {
+                IconRow(emoji = "☁️", title = "Sync data") {
+                    SoftSwitch(checked = syncEnabled, onToggle = onToggleSync)
+                }
+                Divider()
+                IconRow(emoji = "📤", title = "Export data", clickable = true, onClick = onExportData) {
+                    Text("→", fontSize = 16.sp, color = HydroInk3)
+                }
+                Divider()
+                IconRow(
+                    emoji = "🗑️",
+                    title = "Reset progress",
+                    titleColor = HydroCoral,
+                    clickable = true,
                     onClick = onResetProgress,
-                    isDestructive = true
-                )
+                ) {
+                    Text("→", fontSize = 16.sp, color = HydroCoral)
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            SoftSection(label = "ABOUT HYDRO HERO") {
+                LinkRow("⭐", "Rate Hydro Hero", onRateApp)
+                Divider()
+                LinkRow("📨", "Share with a friend", onShareApp)
+                Divider()
+                LinkRow("🛡️", "Privacy policy", onOpenPrivacyPolicy)
+                Divider()
+                LinkRow("📜", "Terms of service", onOpenTermsOfService)
+                Divider()
+                LinkRow("💬", "Contact support", { showContact = true })
+                Divider()
+                LinkRow("⚠️", "Test crash (demo)", { throw RuntimeException("Test Crash") }, danger = true)
+            }
 
-            // About Section
-            SettingsCard(
-                title = "About Hydro Hero"
+            // Footer stamp
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                Text("💧", fontSize = 24.sp)
                 Text(
-                    text = "v1.0.0",
-                    fontSize = 14.sp,
-                    color = TextLight,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    "Hydro Hero · v1.0.0",
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HydroInk2,
                 )
                 Text(
-                    text = "Stay hydrated, stay heroic!",
-                    fontSize = 14.sp,
-                    color = TextLight,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    "Stay hydrated, stay heroic.",
+                    fontSize = 11.sp,
+                    color = HydroInk3,
                 )
-                TextButton(
-                    onClick = onRateApp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            "Rate Hydro Hero",
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                TextButton(
-                    onClick = onShareApp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            "Share Hydro Hero",
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                TextButton(
-                    onClick = onOpenPrivacyPolicy,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            "Privacy Policy",
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                TextButton(
-                    onClick = onOpenTermsOfService,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            "Terms of Service",
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                TextButton(
-                    onClick = { showContact = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            "Contact Support",
-                            color = PrimaryBlue,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                
-                // Crashlytics Test Button (for presentation demo)
-                TextButton(
-                    onClick = { throw RuntimeException("Test Crash") }, // Force a crash
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
-                    ) {
-                        Text(
-                            "Test Crash (Demo)",
-                            color = Color.Red,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
             }
-
-            // (Banner ad is shown globally in MainActivity above the bottom nav)
         }
     }
 
     if (showContact) {
         AlertDialog(
             onDismissRequest = { showContact = false },
-            title = { Text("Contact Support") },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = HydroSurface,
+            title = {
+                Text(
+                    "Contact support",
+                    fontFamily = HydroDisplayFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HydroInk,
+                )
+            },
             text = {
                 Text(
                     "Creator: Daniel Sela\n" +
-                        "Email: danielsela96@#gmail.com\n\n" +
-                        "For help or feedback, send a message with:\n" +
-                        "- Your device/emulator Android version\n" +
-                        "- What you tried to do\n" +
-                        "- A screenshot (if possible)"
+                        "Email: danielsela96@gmail.com\n\n" +
+                        "Send a message with your Android version, what you tried, " +
+                        "and a screenshot if possible.",
+                    fontSize = 14.sp,
+                    color = HydroInk2,
                 )
             },
             confirmButton = {
-                Button(onClick = { showContact = false }) { Text("Close") }
-            }
+                Button(
+                    onClick = { showContact = false },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = HydroPrimaryDeep),
+                ) { Text("Close", fontWeight = FontWeight.Bold) }
+            },
         )
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Daily goal hero with animated stepper
+
 @Composable
-fun SettingsCard(
-    title: String,
-    subtitle: String? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
+private fun DailyGoalHero(currentGoal: Int, onGoalChange: (Int) -> Unit) {
+    var goal by remember(currentGoal) { mutableIntStateOf(currentGoal) }
+    val animGoal by animateIntAsState(
+        targetValue = goal,
+        animationSpec = tween(350, easing = FastOutSlowInEasing),
+        label = "goal"
+    )
+    val glasses = (goal / 250f).toInt()
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, BorderLight, RoundedCornerShape(12.dp)),
-        colors = CardDefaults.cardColors(containerColor = BackgroundWhite)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextDark,
-                modifier = Modifier.padding(bottom = 4.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                Brush.verticalGradient(
+                    0f to HydroPrimarySofter,
+                    1f to HydroPrimarySoft,
+                )
             )
-            if (subtitle != null) {
+            .padding(20.dp),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                "DAILY GOAL",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = HydroInk2,
+                letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = subtitle,
-                    fontSize = 14.sp,
-                    color = TextLight,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    text = "$animGoal",
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 56.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HydroPrimaryDeep,
+                    letterSpacing = (-2).sp,
+                )
+                Text(
+                    text = "ml",
+                    fontFamily = HydroDisplayFamily,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = HydroPrimaryDeep,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
                 )
             }
-            content()
+            Text(
+                text = "≈ $glasses glasses · 250ml each",
+                fontSize = 12.sp,
+                color = HydroInk2,
+            )
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Stepper("−") {
+                    goal = (goal - 250).coerceAtLeast(500)
+                    onGoalChange(goal)
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(HydroPrimarySoft),
+                ) {
+                    val pct = (goal / 4000f).coerceIn(0f, 1f)
+                    val animPct by animateFloatAsState(
+                        targetValue = pct,
+                        animationSpec = tween(400),
+                        label = "pct"
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(animPct)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(HydroPrimaryDeep),
+                    )
+                }
+                Stepper("+") {
+                    goal = (goal + 250).coerceAtMost(5000)
+                    onGoalChange(goal)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                listOf(1500, 2000, 2500, 3000).forEach { preset ->
+                    val active = goal == preset
+                    Surface(
+                        onClick = {
+                            goal = preset
+                            onGoalChange(preset)
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (active) HydroPrimaryDeep else HydroSurface,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                "${preset}ml",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (active) Color.White else HydroInk,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun SettingsToggleItem(
-    label: String,
-    isChecked: Boolean,
-    onToggle: () -> Unit
-) {
-    Row(
+private fun Stepper(label: String, onClick: () -> Unit) {
+    val pressed = remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed.value) 0.88f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessHigh),
+        label = "press",
+    )
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(12.dp, 0.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .size(40.dp)
+            .scale(scale)
+            .clip(RoundedCornerShape(20.dp))
+            .background(HydroSurface)
+            .clickable {
+                pressed.value = true
+                onClick()
+            },
+        contentAlignment = Alignment.Center,
     ) {
+        Text(label, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = HydroPrimaryDeep)
+    }
+    LaunchedEffect(pressed.value) {
+        if (pressed.value) {
+            kotlinx.coroutines.delay(120)
+            pressed.value = false
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Sectioned cards
+
+@Composable
+private fun SoftSection(label: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = label,
-            fontSize = 14.sp,
-            color = TextDark
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = HydroInk3,
+            letterSpacing = 1.sp,
+            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
         )
-        Switch(
-            checked = isChecked,
-            onCheckedChange = { onToggle() },
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = BackgroundWhite,
-                checkedTrackColor = PrimaryBlue,
-                uncheckedThumbColor = BackgroundWhite,
-                uncheckedTrackColor = BorderLight
-            )
-        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = HydroSurface),
+        ) {
+            Column(modifier = Modifier.padding(vertical = 4.dp), content = content)
+        }
     }
 }
 
 @Composable
-fun SettingsTextItem(
-    label: String,
-    value: String
+private fun IconRow(
+    emoji: String,
+    title: String,
+    subtitle: String? = null,
+    titleColor: Color = HydroInk,
+    clickable: Boolean = false,
+    onClick: () -> Unit = {},
+    trailing: @Composable () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp, 0.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .then(if (clickable) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            color = TextDark
-        )
-        Text(
-            text = value,
-            fontSize = 14.sp,
-            color = TextLight
-        )
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(HydroPrimarySofter),
+            contentAlignment = Alignment.Center,
+        ) { Text(emoji, fontSize = 16.sp) }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = titleColor)
+            if (subtitle != null) {
+                Text(subtitle, fontSize = 11.sp, color = HydroInk3)
+            }
+        }
+        trailing()
     }
 }
 
 @Composable
-fun SettingsButtonItem(
-    label: String,
-    onClick: () -> Unit,
-    isDestructive: Boolean = false
-) {
-    TextButton(
+private fun LinkRow(emoji: String, title: String, onClick: () -> Unit, danger: Boolean = false) {
+    IconRow(
+        emoji = emoji,
+        title = title,
+        titleColor = if (danger) HydroCoral else HydroInk,
+        clickable = true,
         onClick = onClick,
+    ) {
+        Text("→", fontSize = 16.sp, color = if (danger) HydroCoral else HydroInk3)
+    }
+}
+
+@Composable
+private fun SoftSwitch(checked: Boolean, onToggle: () -> Unit) {
+    Switch(
+        checked = checked,
+        onCheckedChange = { onToggle() },
+        colors = SwitchDefaults.colors(
+            checkedThumbColor = Color.White,
+            checkedTrackColor = HydroPrimaryDeep,
+            uncheckedThumbColor = Color.White,
+            uncheckedTrackColor = HydroLine,
+        )
+    )
+}
+
+@Composable
+private fun Divider() {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp, 0.dp)
+            .padding(start = 58.dp, end = 14.dp)
+            .height(1.dp)
+            .background(HydroLine)
+    )
+}
+
+@Composable
+private fun CircleIconButton(label: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(22.dp),
+        color = HydroSurface,
+        modifier = Modifier.size(44.dp),
     ) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = if (isDestructive) Color(0xFFEF4444) else PrimaryBlue
-        )
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(label, fontSize = 18.sp, color = HydroInk)
+        }
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Compatibility shims — kept so the original public helpers still compile if
+// referenced elsewhere in the project.
+
+@Composable
+fun SettingsCard(
+    title: String,
+    subtitle: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    SoftSection(label = title.uppercase()) { content() }
+    if (subtitle != null) Spacer(Modifier.height(0.dp)) // ignored — kept for sig parity
+}
+
+@Composable
+fun SettingsToggleItem(label: String, isChecked: Boolean, onToggle: () -> Unit) {
+    IconRow(emoji = "•", title = label) { SoftSwitch(checked = isChecked, onToggle = onToggle) }
+}
+
+@Composable
+fun SettingsTextItem(label: String, value: String) {
+    IconRow(emoji = "•", title = label) { Text(value, fontSize = 13.sp, color = HydroInk3) }
+}
+
+@Composable
+fun SettingsButtonItem(label: String, onClick: () -> Unit, isDestructive: Boolean = false) {
+    LinkRow(emoji = "•", title = label, onClick = onClick, danger = isDestructive)
 }
