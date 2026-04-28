@@ -24,36 +24,7 @@ class WaterViewModel(
     var userData by mutableStateOf(UserData())
         private set
     
-    var shopItems by mutableStateOf(
-        listOf(
-            // Avatars
-            ShopItem("water", "Water Drop", 0, "💧", true, ShopCategory.AVATAR, false), // Free default
-            ShopItem("bear", "Sleepy Bear", 100, "🐻", false, ShopCategory.AVATAR, false),
-            ShopItem("fox", "Curious Fox", 150, "🦊", false, ShopCategory.AVATAR, false),
-            ShopItem("bunny", "Hopping Bunny", 180, "🐰", false, ShopCategory.AVATAR, false),
-            ShopItem("panda", "Cute Panda", 200, "🐼", false, ShopCategory.AVATAR, false),
-            ShopItem("cat", "Cool Cat", 220, "🐱", false, ShopCategory.AVATAR, false),
-            ShopItem("dog", "Happy Dog", 250, "🐶", false, ShopCategory.AVATAR, false),
-            ShopItem("tiger", "Wild Tiger", 300, "🐯", false, ShopCategory.AVATAR, true), // Premium
-            ShopItem("lion", "Brave Lion", 350, "🦁", false, ShopCategory.AVATAR, true), // Premium
-            ShopItem("dragon", "Mystic Dragon", 500, "🐲", false, ShopCategory.AVATAR, true), // Premium
-            
-            // Effects
-            ShopItem("whale", "Whale Spout", 130, "🐋", false, ShopCategory.EFFECT, false),
-            ShopItem("bottle1", "Classic Bottle", 100, "🍼", false, ShopCategory.EFFECT, false),
-            ShopItem("bottle2", "Sports Bottle", 150, "🥤", false, ShopCategory.EFFECT, false),
-            ShopItem("cup", "Magic Cup", 180, "☕", false, ShopCategory.EFFECT, true), // Premium
-            
-            // Backgrounds
-            ShopItem("none", "No Background", 0, "⚪", true, ShopCategory.BACKGROUND, false), // Free default
-            ShopItem("sea", "Deep Blue Sea", 220, "🌊", false, ShopCategory.BACKGROUND, false),
-            ShopItem("stars", "Starry Night", 200, "⭐", false, ShopCategory.BACKGROUND, false),
-            ShopItem("rainbow", "Rainbow Sky", 250, "🌈", false, ShopCategory.BACKGROUND, true), // Premium
-            ShopItem("sunset", "Sunset View", 280, "🌅", false, ShopCategory.BACKGROUND, true), // Premium
-            ShopItem("forest", "Forest Path", 300, "🌲", false, ShopCategory.BACKGROUND, true), // Premium
-            ShopItem("beach", "Beach Paradise", 320, "🏖️", false, ShopCategory.BACKGROUND, true) // Premium
-        )
-    )
+    var shopItems by mutableStateOf(mascotShopItems())
         private set
     
     var reminderCompletions by mutableStateOf(0)
@@ -70,35 +41,7 @@ class WaterViewModel(
     var completedReminderIds by mutableStateOf<Set<String>>(emptySet())
         private set
 
-    private fun defaultShopItems(): List<ShopItem> =
-        listOf(
-            // Avatars
-            ShopItem("water", "Water Drop", 0, "💧", true, ShopCategory.AVATAR, false), // Free default
-            ShopItem("bear", "Sleepy Bear", 100, "🐻", false, ShopCategory.AVATAR, false),
-            ShopItem("fox", "Curious Fox", 150, "🦊", false, ShopCategory.AVATAR, false),
-            ShopItem("bunny", "Hopping Bunny", 180, "🐰", false, ShopCategory.AVATAR, false),
-            ShopItem("panda", "Cute Panda", 200, "🐼", false, ShopCategory.AVATAR, false),
-            ShopItem("cat", "Cool Cat", 220, "🐱", false, ShopCategory.AVATAR, false),
-            ShopItem("dog", "Happy Dog", 250, "🐶", false, ShopCategory.AVATAR, false),
-            ShopItem("tiger", "Wild Tiger", 300, "🐯", false, ShopCategory.AVATAR, true), // Premium
-            ShopItem("lion", "Brave Lion", 350, "🦁", false, ShopCategory.AVATAR, true), // Premium
-            ShopItem("dragon", "Mystic Dragon", 500, "🐲", false, ShopCategory.AVATAR, true), // Premium
-
-            // Effects
-            ShopItem("whale", "Whale Spout", 130, "🐋", false, ShopCategory.EFFECT, false),
-            ShopItem("bottle1", "Classic Bottle", 100, "🍼", false, ShopCategory.EFFECT, false),
-            ShopItem("bottle2", "Sports Bottle", 150, "🥤", false, ShopCategory.EFFECT, false),
-            ShopItem("cup", "Magic Cup", 180, "☕", false, ShopCategory.EFFECT, true), // Premium
-
-            // Backgrounds
-            ShopItem("none", "No Background", 0, "⚪", true, ShopCategory.BACKGROUND, false), // Free default
-            ShopItem("sea", "Deep Blue Sea", 220, "🌊", false, ShopCategory.BACKGROUND, false),
-            ShopItem("stars", "Starry Night", 200, "⭐", false, ShopCategory.BACKGROUND, false),
-            ShopItem("rainbow", "Rainbow Sky", 250, "🌈", false, ShopCategory.BACKGROUND, true), // Premium
-            ShopItem("sunset", "Sunset View", 280, "🌅", false, ShopCategory.BACKGROUND, true), // Premium
-            ShopItem("forest", "Forest Path", 300, "🌲", false, ShopCategory.BACKGROUND, true), // Premium
-            ShopItem("beach", "Beach Paradise", 320, "🏖️", false, ShopCategory.BACKGROUND, true) // Premium
-        )
+    private fun defaultShopItems(): List<ShopItem> = mascotShopItems()
 
     private fun defaultPresetReminders(): List<Reminder> =
         listOf(
@@ -493,7 +436,7 @@ class WaterViewModel(
         if (item.isOwned) {
             // If it's an avatar, select it
             if (item.category == ShopCategory.AVATAR) {
-                setSelectedAvatar(item.icon)
+                setSelectedAvatar(item.mascotId ?: item.icon)
             }
             // If it's a background, select it
             if (item.category == ShopCategory.BACKGROUND) {
@@ -514,7 +457,7 @@ class WaterViewModel(
         // Free items (price 0) can be selected without purchase
         if (item.price == 0) {
             if (item.category == ShopCategory.AVATAR) {
-                setSelectedAvatar(item.icon)
+                setSelectedAvatar(item.mascotId ?: item.icon)
             }
             if (item.category == ShopCategory.BACKGROUND) {
                 setSelectedBackground(item.id)
@@ -545,7 +488,7 @@ class WaterViewModel(
             
             // If it's an avatar, select it immediately
             if (item.category == ShopCategory.AVATAR) {
-                setSelectedAvatar(item.icon)
+                setSelectedAvatar(item.mascotId ?: item.icon)
             }
             // If it's a background, select it immediately
             if (item.category == ShopCategory.BACKGROUND) {
@@ -765,3 +708,36 @@ class WaterViewModel(
         }
     }
 }
+
+
+// ─────────────────────────────────────────────────────────────────────
+// Mascot-aware shop catalog. Avatars use `mascotId` so ShopScreen
+// renders the code-drawn characters from Mascots.kt; effects + backgrounds
+// keep their emojis. Drop a Mascots.kt file in ui/screens/ for this to work.
+// ─────────────────────────────────────────────────────────────────────
+private fun mascotShopItems(): List<ShopItem> = listOf(
+    // Avatars
+    ShopItem("splash", "Splash",        0,   "💧", true,  ShopCategory.AVATAR, false, mascotId = "splash"),
+    ShopItem("moss",   "Moss",          100, "🌱", false, ShopCategory.AVATAR, false, mascotId = "moss"),
+    ShopItem("berry",  "Berry",         150, "🫐", false, ShopCategory.AVATAR, false, mascotId = "berry"),
+    ShopItem("sunny",  "Sunny",         180, "☀️", false, ShopCategory.AVATAR, false, mascotId = "sunny"),
+    ShopItem("cloud",  "Cloud",         200, "☁️", false, ShopCategory.AVATAR, false, mascotId = "cloud"),
+    ShopItem("bunny",  "Hopping Bunny", 220, "🐰", false, ShopCategory.AVATAR, false, mascotId = "bunny"),
+    ShopItem("fox",    "Curious Fox",   300, "🦊", false, ShopCategory.AVATAR, true,  mascotId = "fox"),
+    ShopItem("bear",   "Sleepy Bear",   350, "🐻", false, ShopCategory.AVATAR, true,  mascotId = "bear"),
+
+    // Effects
+    ShopItem("whale",   "Whale Spout",    130, "🐋", false, ShopCategory.EFFECT, false),
+    ShopItem("bottle1", "Classic Bottle", 100, "🍼", false, ShopCategory.EFFECT, false),
+    ShopItem("bottle2", "Sports Bottle",  150, "🥤", false, ShopCategory.EFFECT, false),
+    ShopItem("cup",     "Magic Cup",      180, "☕", false, ShopCategory.EFFECT, true),
+
+    // Backgrounds
+    ShopItem("none",    "No Background",   0,   "⚪", true,  ShopCategory.BACKGROUND, false),
+    ShopItem("sea",     "Deep Blue Sea",   220, "🌊", false, ShopCategory.BACKGROUND, false),
+    ShopItem("stars",   "Starry Night",    200, "⭐", false, ShopCategory.BACKGROUND, false),
+    ShopItem("rainbow", "Rainbow Sky",     250, "🌈", false, ShopCategory.BACKGROUND, true),
+    ShopItem("sunset",  "Sunset View",     280, "🌅", false, ShopCategory.BACKGROUND, true),
+    ShopItem("forest",  "Forest Path",     300, "🌲", false, ShopCategory.BACKGROUND, true),
+    ShopItem("beach",   "Beach Paradise",  320, "🏖️", false, ShopCategory.BACKGROUND, true),
+)

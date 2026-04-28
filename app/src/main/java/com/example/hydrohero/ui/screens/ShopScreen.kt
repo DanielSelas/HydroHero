@@ -113,16 +113,14 @@ fun ShopScreen(
             }
 
             item {
+                val selectedAvatarItem = shopItems.firstOrNull {
+                    it.category == com.example.hydrohero.data.ShopCategory.AVATAR &&
+                        (it.mascotId == userData.selectedAvatar || it.icon == userData.selectedAvatar)
+                }
                 AvatarShowcase(
                     avatar = userData.selectedAvatar,
-                    label = shopItems.firstOrNull {
-                        it.icon == userData.selectedAvatar &&
-                            it.category == com.example.hydrohero.data.ShopCategory.AVATAR
-                    }?.name ?: "Selected avatar",
-                    isOwned = shopItems.firstOrNull {
-                        it.icon == userData.selectedAvatar &&
-                            it.category == com.example.hydrohero.data.ShopCategory.AVATAR
-                    }?.isOwned == true,
+                    label = selectedAvatarItem?.name ?: "Selected avatar",
+                    isOwned = selectedAvatarItem?.isOwned == true,
                 )
             }
 
@@ -433,7 +431,12 @@ private fun AvatarShowcase(avatar: String, label: String, isOwned: Boolean) {
                         .background(HydroPrimarySoft),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(avatar, fontSize = 56.sp)
+                    val mascotIds = setOf("splash", "moss", "berry", "sunny", "cloud", "bunny", "fox", "bear")
+                    if (avatar.lowercase() in mascotIds) {
+                        MascotById(avatar.lowercase(), size = 80.dp)
+                    } else {
+                        Text(avatar, fontSize = 56.sp)
+                    }
                 }
             }
             Spacer(Modifier.height(12.dp))
@@ -542,7 +545,9 @@ fun CategorySection(
 @Composable
 fun ShopItemCard(item: ShopItem, userData: UserData, onClick: (ShopItem) -> Unit) {
     val isSelected = when (item.category) {
-        com.example.hydrohero.data.ShopCategory.AVATAR -> item.icon == userData.selectedAvatar
+        com.example.hydrohero.data.ShopCategory.AVATAR ->
+            (item.mascotId != null && item.mascotId == userData.selectedAvatar) ||
+                item.icon == userData.selectedAvatar
         com.example.hydrohero.data.ShopCategory.BACKGROUND -> item.id == userData.selectedBackground
         com.example.hydrohero.data.ShopCategory.EFFECT -> item.icon == userData.selectedEffect
     }
@@ -576,10 +581,20 @@ fun ShopItemCard(item: ShopItem, userData: UserData, onClick: (ShopItem) -> Unit
                     .background(HydroPrimarySofter),
                 contentAlignment = Alignment.Center,
             ) {
-                if (item.mascotId != null) {
-                    MascotById(item.mascotId, size = 80.dp)
-                } else {
-                    Text(item.icon, fontSize = 48.sp)
+                when (item.category) {
+                    com.example.hydrohero.data.ShopCategory.AVATAR -> {
+                        if (item.mascotId != null) {
+                            MascotById(item.mascotId, size = 80.dp)
+                        } else {
+                            Text(item.icon, fontSize = 48.sp)
+                        }
+                    }
+                    com.example.hydrohero.data.ShopCategory.BACKGROUND -> {
+                        BackgroundById(item.id, modifier = Modifier.fillMaxSize())
+                    }
+                    com.example.hydrohero.data.ShopCategory.EFFECT -> {
+                        EffectById(item.id, size = 80.dp)
+                    }
                 }
                 if (item.isPremium) {
                     Box(

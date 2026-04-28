@@ -129,13 +129,20 @@ fun SettingsScreen(
                 }
             }
 
+            SoftSection(label = "APPEARANCE") {
+                ThemeHueRow()
+                Divider()
+                IconRow(emoji = "🌙", title = "Dark mode") {
+                    SoftSwitch(
+                        checked = HydroThemeRuntime.dark,
+                        onToggle = { HydroThemeRuntime.applyDark(!HydroThemeRuntime.dark) },
+                    )
+                }
+            }
+
             SoftSection(label = "DISPLAY") {
                 IconRow(emoji = "📐", title = "Units") {
                     Text("Glasses", fontSize = 13.sp, color = HydroInk3)
-                }
-                Divider()
-                IconRow(emoji = "🎨", title = "Theme") {
-                    Text("Light", fontSize = 13.sp, color = HydroInk3)
                 }
             }
 
@@ -493,6 +500,59 @@ private fun CircleIconButton(label: String, onClick: () -> Unit) {
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(label, fontSize = 18.sp, color = HydroInk)
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Theme hue picker — five color swatches; tap to change app primary
+
+@Composable
+private fun ThemeHueRow() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(HydroPrimarySofter),
+                contentAlignment = Alignment.Center,
+            ) { Text("🎨", fontSize = 18.sp) }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                "Primary color",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = HydroInk,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 48.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            HueOptions.forEach { (id, color) ->
+                val selected = HydroThemeRuntime.hueId == id
+                Box(
+                    modifier = Modifier
+                        .size(if (selected) 38.dp else 32.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(color)
+                        .border(
+                            width = if (selected) 3.dp else 0.dp,
+                            color = HydroInk,
+                            shape = RoundedCornerShape(20.dp),
+                        )
+                        .clickable { HydroThemeRuntime.applyHue(id) },
+                )
+            }
         }
     }
 }

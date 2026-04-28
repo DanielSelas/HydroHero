@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.hydrohero.data.UserData
 import com.example.hydrohero.ui.components.SplashMascot
 import com.example.hydrohero.ui.components.WaveBottle
+import com.example.hydrohero.ui.components.WaveBottleWithMascot
 import com.example.hydrohero.ui.theme.*
 
 /**
@@ -39,6 +40,7 @@ fun HomeScreen(
     onSettingsClick: () -> Unit,
     onSubscriptionClick: () -> Unit,
     onDailyProgressClick: () -> Unit,
+    onQuickAdd: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val goalMl = userData.dailyGoal.coerceAtLeast(1)
@@ -81,6 +83,9 @@ fun HomeScreen(
                 value = userData.coins,
                 modifier = Modifier.padding(end = 8.dp),
             )
+            // Quick dark-mode toggle so the user can flip themes from the home header.
+            DarkModeButton()
+            Spacer(Modifier.width(4.dp))
             PremiumButton(
                 premium = userData.isPremium,
                 onClick = onSubscriptionClick,
@@ -174,11 +179,34 @@ fun HomeScreen(
                     color = HydroInk2,
                 )
             }
-            WaveBottle(
-                level = level,
-                width = 120.dp,
-                height = 180.dp,
-            )
+            Box(contentAlignment = Alignment.Center) {
+                // Selected background painted behind the bottle (only if not "none")
+                if (userData.selectedBackground != "none" && userData.selectedBackground.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .size(width = 130.dp, height = 190.dp)
+                            .clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
+                    ) {
+                        BackgroundById(userData.selectedBackground)
+                    }
+                }
+                WaveBottleWithMascot(
+                    level = level,
+                    mascotId = userData.selectedAvatar,
+                    width = 120.dp,
+                    height = 180.dp,
+                )
+                // Selected effect — small flourish in top-right
+                if (userData.selectedEffect.isNotBlank() && userData.selectedEffect != "none") {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 4.dp, end = 4.dp)
+                    ) {
+                        EffectById(userData.selectedEffect, size = 36.dp)
+                    }
+                }
+            }
         }
 
         // ─── Quick log chips ───────────────────────────────────
@@ -189,9 +217,9 @@ fun HomeScreen(
                 .padding(top = 22.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            QuickChip("Small",  150, "🥃", Modifier.weight(1f)) { /* viewModel.addWater(150) */ }
-            QuickChip("Glass",  250, "🥛", Modifier.weight(1f)) { /* viewModel.addWater(250) */ }
-            QuickChip("Bottle", 500, "🍶", Modifier.weight(1f)) { /* viewModel.addWater(500) */ }
+            QuickChip("Small",  150, "🥃", Modifier.weight(1f)) { onQuickAdd(150) }
+            QuickChip("Glass",  250, "🥛", Modifier.weight(1f)) { onQuickAdd(250) }
+            QuickChip("Bottle", 500, "🍶", Modifier.weight(1f)) { onQuickAdd(500) }
         }
 
         // ─── Big add-water CTA ─────────────────────────────────
@@ -363,6 +391,22 @@ private fun CoinPill(value: Int, modifier: Modifier = Modifier) {
             fontWeight = FontWeight.SemiBold,
             color = HydroInk,
         )
+    }
+}
+
+@Composable
+private fun DarkModeButton() {
+    val dark = HydroThemeRuntime.dark
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(HydroSurface)
+            .border(width = 1.dp, color = HydroLine, shape = CircleShape)
+            .clickable { HydroThemeRuntime.applyDark(!dark) },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(if (dark) "☀️" else "🌙", fontSize = 16.sp)
     }
 }
 
