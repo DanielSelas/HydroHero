@@ -2,6 +2,7 @@ package com.danielsela.hydrohero.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -24,9 +25,13 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.danielsela.hydrohero.data.DailyRecord
 import com.danielsela.hydrohero.data.WaterEntry
 import com.danielsela.hydrohero.ui.theme.*
 import java.time.Instant
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlin.math.sin
@@ -44,6 +49,8 @@ fun DailyProgressScreen(
     dailyGoal: Int,
     currentIntake: Int,
     entries: List<WaterEntry>,
+    /** Last 7 days ending today, oldest first. */
+    weekHistory: List<DailyRecord> = emptyList(),
     onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -139,6 +146,11 @@ fun DailyProgressScreen(
                     StatPill("Last", lastDrink ?: "—", Modifier.weight(1f))
                 }
             }
+        }
+
+        if (weekHistory.isNotEmpty()) {
+            Spacer(Modifier.height(20.dp))
+            WeekSection(weekHistory)
         }
 
         Spacer(Modifier.height(20.dp))
@@ -421,5 +433,125 @@ private fun CircleIconButton(label: String, onClick: () -> Unit) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(label, fontSize = 18.sp, color = HydroInk)
         }
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// Last 7 days
+// ─────────────────────────────────────────────────────────────
+@Composable
+private fun WeekSection(week: List<DailyRecord>) {
+    val daysMet = week.count { it.goalMet }
+    // Average over days that were actually tracked, so a run of untouched days
+    // does not drag the number to zero.
+    val tracked = week.filter { it.totalMl > 0 }
+    val avgMl = if (tracked.isEmpty()) 0 else tracked.sumOf { it.totalMl } / tracked.size
+    val best = week.maxOfOrNull { it.totalMl } ?: 0
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "LAST 7 DAYS",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = HydroInk3,
+            letterSpacing = 1.sp,
+        )
+        Text(
+            "$daysMet/${week.size} goals met",
+            fontSize = 11.sp,
+            color = HydroInk3,
+        )
+    }
+    Spacer(Modifier.height(10.dp))
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = HydroSurface),
+        border = BorderStroke(1.dp, HydroLine),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(Modifier.padding(18.dp)) {
+            // Scale bars against the goal, but let an over-goal day still fit.
+            val ceiling = maxOf(week.maxOfOrNull { it.totalMl } ?: 0, week.firstOrNull()?.goalMl ?: 2000, 1)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                week.forEachIndexed { index, day ->
+                    DayBar(
+                        day = day,
+                        ceiling = ceiling,
+                        isToday = index == week.lastIndex,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                StatPill("Avg", if (avgMl > 0) "${avgMl}ml" else "—", Modifier.weight(1f))
+                StatPill("Best", if (best > 0) "${best}ml" else "—", Modifier.weight(1f))
+                StatPill("Goals", "$daysMet", Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayBar(
+    day: DailyRecord,
+    ceiling: Int,
+    isToday: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val fraction = (day.totalMl.toFloat() / ceiling.toFloat()).coerceIn(0f, 1f)
+    val label = runCatching {
+        LocalDate.parse(day.date).dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault())
+    }.getOrDefault("")
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(84.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(HydroSurface3),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            if (fraction > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(fraction)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (day.goalMet) HydroPrimaryStrong else HydroPrimarySoft)
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label,
+            fontSize = 10.sp,
+            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+            color = if (isToday) HydroInk else HydroInk3,
+        )
     }
 }

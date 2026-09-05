@@ -441,6 +441,7 @@ fun HydroHeroApp() {
                         dailyGoal = viewModel.userData.dailyGoal,
                         currentIntake = viewModel.userData.currentIntake,
                         entries = viewModel.waterEntries,
+                        weekHistory = viewModel.recentDays(),
                         onBackClick = { navController.popBackStack() },
                         onSettingsClick = { navController.navigate(Screen.Settings.route) }
                     )

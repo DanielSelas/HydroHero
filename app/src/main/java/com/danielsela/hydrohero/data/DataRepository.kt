@@ -38,8 +38,12 @@ class DataRepository(context: Context) {
         private const val KEY_QUIET_HOURS_ENABLED = "quiet_hours_enabled"
         private const val KEY_PRESET_REMINDERS = "preset_reminders"
         private const val KEY_CUSTOM_REMINDERS = "custom_reminders"
+        private const val KEY_DAILY_HISTORY = "daily_history"
 
         private const val DEFAULT_COINS = 800
+
+        /** Roughly a year; one row per day stays well under a few tens of KB. */
+        private const val MAX_HISTORY_DAYS = 365
     }
 
     fun getUserData(): UserData {
@@ -50,6 +54,16 @@ class DataRepository(context: Context) {
         // Streak, coins, owned items, premium and cosmetics must survive across
         // days and app restarts.
         if (lastDate != today) {
+            // Archive the day that just ended before its counters are wiped.
+            if (lastDate != null) {
+                archiveDay(
+                    date = lastDate,
+                    totalMl = prefs.getInt(KEY_CURRENT_INTAKE, 0),
+                    glasses = prefs.getInt(KEY_GLASSES_COUNT, 0),
+                    goalMl = prefs.getInt(KEY_DAILY_GOAL, 2000)
+                )
+            }
+
             prefs.edit()
                 .putString(KEY_LAST_DATE, today)
                 .putInt(KEY_CURRENT_INTAKE, 0)
@@ -75,6 +89,50 @@ class DataRepository(context: Context) {
             isPremium = prefs.getBoolean(KEY_IS_PREMIUM, false),
             premiumType = prefs.getString(KEY_PREMIUM_TYPE, "none") ?: "none"
         )
+    }
+
+    // ── Daily history ───────────────────────────────────────────────────
+
+    /** Archived days, oldest first. Today is NOT included — it is still live. */
+    fun getDailyHistory(): List<DailyRecord> {
+        val raw = prefs.getString(KEY_DAILY_HISTORY, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(raw)
+            (0 until array.length()).map { index ->
+                val item = array.getJSONObject(index)
+                DailyRecord(
+                    date = item.getString("date"),
+                    totalMl = item.getInt("totalMl"),
+                    glasses = item.getInt("glasses"),
+                    goalMl = item.getInt("goalMl")
+                )
+            }
+        } catch (e: JSONException) {
+            emptyList()
+        }
+    }
+
+    /**
+     * Writes one finished day. A day with no water logged is still recorded, so
+     * a gap in the chart means "app not opened", not "drank nothing".
+     */
+    private fun archiveDay(date: String, totalMl: Int, glasses: Int, goalMl: Int) {
+        val existing = getDailyHistory().filterNot { it.date == date }
+        val updated = (existing + DailyRecord(date, totalMl, glasses, goalMl))
+            .sortedBy { it.date }
+            .takeLast(MAX_HISTORY_DAYS)
+
+        val array = JSONArray()
+        updated.forEach { record ->
+            array.put(
+                JSONObject()
+                    .put("date", record.date)
+                    .put("totalMl", record.totalMl)
+                    .put("glasses", record.glasses)
+                    .put("goalMl", record.goalMl)
+            )
+        }
+        prefs.edit().putString(KEY_DAILY_HISTORY, array.toString()).apply()
     }
 
     /**
@@ -125,6 +183,7 @@ class DataRepository(context: Context) {
             .remove(KEY_WATER_ENTRIES)
             .remove(KEY_PRESET_REMINDERS)
             .remove(KEY_CUSTOM_REMINDERS)
+            .remove(KEY_DAILY_HISTORY)
             .putBoolean(KEY_NOTIFICATIONS_ENABLED, false)
             .apply()
     }

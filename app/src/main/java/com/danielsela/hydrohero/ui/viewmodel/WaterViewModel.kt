@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.danielsela.hydrohero.analytics.AnalyticsLogger
 import com.danielsela.hydrohero.analytics.NoOpAnalyticsLogger
+import com.danielsela.hydrohero.data.DailyRecord
 import com.danielsela.hydrohero.data.DataRepository
 import com.danielsela.hydrohero.data.Reminder
 import com.danielsela.hydrohero.data.ShopCategory
@@ -35,6 +36,11 @@ class WaterViewModel(
 
     // Daily progress log — persisted, and cleared by the same daily rollover
     // that clears currentIntake, so the log always matches the intake on Home.
+    // Days that have already rolled over. Today is not in here — it is still
+    // live in userData — so [recentDays] stitches the two together.
+    var dailyHistory by mutableStateOf<List<DailyRecord>>(emptyList())
+        private set
+
     var waterEntries by mutableStateOf<List<WaterEntry>>(emptyList())
         private set
 
@@ -621,6 +627,7 @@ class WaterViewModel(
         userData = dataRepository.getUserData()
         // getUserData() performs the daily rollover, so read the log after it
         waterEntries = dataRepository.getWaterEntries()
+        dailyHistory = dataRepository.getDailyHistory()
         // Load reminder completion data
         reminderCompletions = dataRepository.getReminderCompletions()
         reminderRewardClaimed = dataRepository.getReminderRewardClaimed()
@@ -673,6 +680,29 @@ class WaterViewModel(
     }
 
 
+
+    /**
+     * The last [days] days ending today, oldest first. Days the app was never
+     * opened come back as zero rather than being skipped, so the chart keeps a
+     * fixed number of bars and the weekday labels stay aligned.
+     */
+    fun recentDays(days: Int = 7): List<DailyRecord> {
+        val today = java.time.LocalDate.now()
+        val byDate = dailyHistory.associateBy { it.date }
+        return (days - 1 downTo 0).map { offset ->
+            val date = today.minusDays(offset.toLong()).toString()
+            if (offset == 0) {
+                DailyRecord(
+                    date = date,
+                    totalMl = userData.currentIntake,
+                    glasses = userData.glassesCount,
+                    goalMl = userData.dailyGoal
+                )
+            } else {
+                byDate[date] ?: DailyRecord(date, totalMl = 0, glasses = 0, goalMl = userData.dailyGoal)
+            }
+        }
+    }
 
     private fun updateCrashlyticsContext() {
         try {
