@@ -31,12 +31,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.danielsela.hydrohero.analytics.FirebaseAnalyticsLogger
+import com.danielsela.hydrohero.billing.BillingManager
 import com.danielsela.hydrohero.data.DataRepository
 import com.danielsela.hydrohero.notifications.NotificationChannels
 import com.danielsela.hydrohero.notifications.ReminderScheduler
@@ -103,6 +107,15 @@ fun HydroHeroApp() {
     val reminderScheduler = remember { ReminderScheduler(context) }
     val analytics = remember { FirebaseAnalyticsLogger(context.applicationContext) }
     val viewModel = remember { WaterViewModel(dataRepository, reminderScheduler, analytics) }
+    val billingManager = remember {
+        BillingManager(
+            context = context,
+            onEntitlementChanged = { entitlement ->
+                viewModel.applyEntitlement(entitlement.isPremium, entitlement.premiumType)
+            },
+            onError = { message -> viewModel.reportBillingError(message) },
+        )
+    }
     var showAddWaterDialog by remember { mutableStateOf(false) }
     var showAddReminderDialog by remember { mutableStateOf(false) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }
@@ -216,6 +229,32 @@ fun HydroHeroApp() {
         NotificationChannels.ensureCreated(context)
         MobileAds.initialize(context)
         analytics.setUserProperty("build_type", "debug")
+    }
+
+    // Tie the Play connection to the screen, and re-check entitlement on every
+    // resume so a purchase, refund or cancellation made outside the app is
+    // picked up when the user comes back.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        billingManager.start()
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) billingManager.queryPurchases()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            billingManager.stop()
+        }
+    }
+
+    LaunchedEffect(viewModel.billingErrorEvent) {
+        if (viewModel.billingErrorEvent > 0) {
+            android.widget.Toast.makeText(
+                context,
+                viewModel.billingErrorMessage,
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     // Log screen views based on navigation destination
@@ -699,25 +738,19 @@ fun HydroHeroApp() {
         if (showSubscriptionDialog) {
             SubscriptionDialog(
                 userData = viewModel.userData,
+                monthlyPrice = billingManager.monthlyPrice,
+                lifetimePrice = billingManager.lifetimePrice,
                 onDismiss = { showSubscriptionDialog = false },
                 onUpgrade = { premiumType ->
-                    viewModel.upgradeToPremium(premiumType)
+                    // No optimistic unlock: premium turns on only when Play
+                    // reports the completed purchase back through the listener.
+                    if (activity != null) billingManager.launchPurchase(activity, premiumType)
                     showSubscriptionDialog = false
-                    android.widget.Toast.makeText(
-                        context,
-                        "Premium activated! 🎉",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                }
-                ,
+                },
                 onCancelMonthly = {
-                    viewModel.upgradeToPremium("none")
+                    // Only Play can cancel a subscription; open the Play screen.
+                    if (activity != null) billingManager.openSubscriptionManagement(activity)
                     showSubscriptionDialog = false
-                    android.widget.Toast.makeText(
-                        context,
-                        "Monthly subscription cancelled. Back to Free plan.",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
                 }
             )
         }

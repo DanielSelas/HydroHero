@@ -94,6 +94,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation("nl.dionsegijn:konfetti-compose:2.0.3")
     implementation("com.google.android.gms:play-services-ads:23.0.0")
+    implementation(libs.billing.ktx)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics.ktx)
     implementation(libs.firebase.crashlytics.ktx)

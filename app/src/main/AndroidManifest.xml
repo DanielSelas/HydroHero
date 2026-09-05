@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Google Play Billing -->
+    <uses-permission android:name="com.android.vending.BILLING" />
     <!-- Deliberately NOT declaring SCHEDULE_EXACT_ALARM: Google Play restricts it
          to alarm-clock and calendar apps, and hydration reminders do not qualify.
          ReminderScheduler already falls back to an inexact 15-minute window when

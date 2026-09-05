@@ -383,13 +383,33 @@ class WaterViewModel(
         dataRepository.updateSelectedEffect(effectIcon)
     }
     
-    fun upgradeToPremium(premiumType: String) {
-        val isPremium = premiumType != "none"
-        userData = userData.copy(
-            isPremium = isPremium,
-            premiumType = premiumType
-        )
+    /**
+     * Applies the entitlement Play reported. This is the ONLY way premium can
+     * change — there is deliberately no method that grants it from the UI, so a
+     * paywall tap can never hand out premium without a completed purchase.
+     */
+    fun applyEntitlement(isPremium: Boolean, premiumType: String) {
+        if (userData.isPremium == isPremium && userData.premiumType == premiumType) return
+
+        val wasPremium = userData.isPremium
+        userData = userData.copy(isPremium = isPremium, premiumType = premiumType)
         dataRepository.updatePremiumStatus(isPremium, premiumType)
+
+        if (isPremium && !wasPremium) {
+            analytics.logEvent("premium_activated", mapOf("premium_type" to premiumType))
+        }
+        updateCrashlyticsContext()
+    }
+
+    /** One-shot billing error surfaced as a toast by the UI layer. */
+    var billingErrorMessage by mutableStateOf("")
+        private set
+    var billingErrorEvent by mutableStateOf(0)
+        private set
+
+    fun reportBillingError(message: String) {
+        billingErrorMessage = message
+        billingErrorEvent++
     }
     
     fun purchaseShopItem(item: ShopItem): Boolean {

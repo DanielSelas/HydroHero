@@ -35,6 +35,9 @@ import com.danielsela.hydrohero.ui.theme.*
 @Composable
 fun SubscriptionDialog(
     userData: UserData,
+    /** Localized price from Play; falls back to the list price when unavailable. */
+    monthlyPrice: String? = null,
+    lifetimePrice: String? = null,
     onDismiss: () -> Unit,
     onUpgrade: (String) -> Unit,
     onCancelMonthly: () -> Unit = {},
@@ -60,7 +63,7 @@ fun SubscriptionDialog(
                     item {
                         PlanCard(
                             title = "Monthly",
-                            price = "$0.99",
+                            price = monthlyPrice ?: "$0.99",
                             period = "per month",
                             features = listOf(
                                 "All premium avatars",
@@ -76,7 +79,7 @@ fun SubscriptionDialog(
                     item {
                         PlanCard(
                             title = "Lifetime",
-                            price = "$9.99",
+                            price = lifetimePrice ?: "$9.99",
                             period = "one-time",
                             features = listOf(
                                 "Everything in Monthly",
