@@ -6,8 +6,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Android 12+ (best-effort exact alarms for reminders) -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Deliberately NOT declaring SCHEDULE_EXACT_ALARM: Google Play restricts it
+         to alarm-clock and calendar apps, and hydration reminders do not qualify.
+         ReminderScheduler already falls back to an inexact 15-minute window when
+         exact alarms are unavailable, which is the right precision here anyway. -->
 
     <application
         android:allowBackup="true"

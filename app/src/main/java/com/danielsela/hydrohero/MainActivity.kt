@@ -1,10 +1,12 @@
 package com.danielsela.hydrohero
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Build
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -160,6 +162,27 @@ fun HydroHeroApp() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         context.startActivity(Intent.createChooser(intent, "Export water log"))
+    }
+
+    /**
+     * Opens the system screen for our reminders channel, where Android puts the
+     * sound and vibration controls from API 26 on.
+     */
+    fun openSystemNotificationSettings() {
+        val intent = Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            putExtra(Settings.EXTRA_CHANNEL_ID, NotificationChannels.REMINDERS_CHANNEL_ID)
+        }
+        // Fall back to the app's notification screen if the channel deep link is
+        // unavailable on this device.
+        val fallback = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        }
+        try {
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            context.startActivity(fallback)
+        }
     }
 
     fun shareApp() {
@@ -502,10 +525,7 @@ fun HydroHeroApp() {
                     SettingsScreen(
                         userData = viewModel.userData,
                         notificationsEnabled = viewModel.notificationsEnabled,
-                        soundEnabled = viewModel.soundEnabled,
-                        vibrationEnabled = viewModel.vibrationEnabled,
                         quietHoursEnabled = viewModel.quietHoursEnabled,
-                        syncEnabled = viewModel.syncEnabled,
                         onBackClick = {
                             navController.popBackStack()
                         },
@@ -528,10 +548,8 @@ fun HydroHeroApp() {
                                 viewModel.toggleNotifications()
                             }
                         },
-                        onToggleSound = { viewModel.toggleSound() },
-                        onToggleVibration = { viewModel.toggleVibration() },
                         onToggleQuietHours = { viewModel.toggleQuietHours() },
-                        onToggleSync = { viewModel.toggleSync() },
+                        onOpenSystemNotificationSettings = { openSystemNotificationSettings() },
                         onExportData = {
                             exportData()
                         },

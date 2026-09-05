@@ -45,17 +45,12 @@ import com.danielsela.hydrohero.ui.theme.*
 fun SettingsScreen(
     userData: UserData,
     notificationsEnabled: Boolean,
-    soundEnabled: Boolean,
-    vibrationEnabled: Boolean,
     quietHoursEnabled: Boolean,
-    syncEnabled: Boolean,
     onBackClick: () -> Unit,
     onGoalChange: (Int) -> Unit,
     onToggleNotifications: () -> Unit,
-    onToggleSound: () -> Unit,
-    onToggleVibration: () -> Unit,
     onToggleQuietHours: () -> Unit,
-    onToggleSync: () -> Unit,
+    onOpenSystemNotificationSettings: () -> Unit,
     onExportData: () -> Unit,
     onResetProgress: () -> Unit,
     onRateApp: () -> Unit,
@@ -116,16 +111,21 @@ fun SettingsScreen(
                     SoftSwitch(checked = notificationsEnabled, onToggle = onToggleNotifications)
                 }
                 Divider()
-                IconRow(emoji = "🔊", title = "Sound alerts") {
-                    SoftSwitch(checked = soundEnabled, onToggle = onToggleSound)
-                }
-                Divider()
-                IconRow(emoji = "📳", title = "Vibration") {
-                    SoftSwitch(checked = vibrationEnabled, onToggle = onToggleVibration)
-                }
-                Divider()
                 IconRow(emoji = "🌙", title = "Quiet hours", subtitle = "10pm – 7am") {
                     SoftSwitch(checked = quietHoursEnabled, onToggle = onToggleQuietHours)
+                }
+                Divider()
+                // Android owns sound and vibration per notification channel from
+                // API 26 on, so these deep-link to the system screen instead of
+                // being duplicated (and ignored) here.
+                IconRow(
+                    emoji = "🔊",
+                    title = "Sound & vibration",
+                    subtitle = "Manage in system settings",
+                    clickable = true,
+                    onClick = onOpenSystemNotificationSettings,
+                ) {
+                    Text("→", fontSize = 16.sp, color = HydroInk3)
                 }
             }
 
@@ -147,10 +147,6 @@ fun SettingsScreen(
             }
 
             SoftSection(label = "ACCOUNT") {
-                IconRow(emoji = "☁️", title = "Sync data") {
-                    SoftSwitch(checked = syncEnabled, onToggle = onToggleSync)
-                }
-                Divider()
                 IconRow(emoji = "📤", title = "Export data", clickable = true, onClick = onExportData) {
                     Text("→", fontSize = 16.sp, color = HydroInk3)
                 }

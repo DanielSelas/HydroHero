@@ -103,6 +103,11 @@ class WaterViewModel(
         dataRepository.resetPrototypeState()
         userData = dataRepository.getUserData()
 
+        // Back to the shipped reminder set (resetPrototypeState cleared the
+        // saved copies, so this is what a fresh install would show)
+        presetReminders = defaultPresetReminders()
+        customReminders = defaultCustomReminders()
+
         // Reset local/prototype-only state
         waterEntries = emptyList()
         completedReminderIds = emptySet()
@@ -148,56 +153,10 @@ class WaterViewModel(
         updateCrashlyticsContext()
     }
 
-    var presetReminders by mutableStateOf(
-        listOf(
-            Reminder(
-                id = "morning",
-                title = "Start Your Day",
-                description = "Start your day with a glass of water before 8:00 AM.",
-                time = "8:00 AM",
-                isEnabled = true,
-                isPreset = true
-            ),
-            Reminder(
-                id = "midday",
-                title = "Midday Check",
-                description = "Have you drunk at least half of your daily amount? Check around noon.",
-                time = "12:00 PM",
-                isEnabled = true,
-                isPreset = true
-            ),
-            Reminder(
-                id = "evening",
-                title = "Evening Wind-down",
-                description = "A final sip before bed at 9:00 PM.",
-                time = "9:00 PM",
-                isEnabled = true,
-                isPreset = true
-            )
-        )
-    )
+    var presetReminders by mutableStateOf(defaultPresetReminders())
         private set
 
-    var customReminders by mutableStateOf(
-        listOf(
-            Reminder(
-                id = "afternoon",
-                title = "Afternoon Hydration",
-                description = "1:00 PM, Daily.",
-                time = "1:00 PM",
-                isEnabled = true,
-                isPreset = false
-            ),
-            Reminder(
-                id = "bedtime",
-                title = "Bedtime Sip",
-                description = "9:30 PM, Weekdays.",
-                time = "9:30 PM",
-                isEnabled = false,
-                isPreset = false
-            )
-        )
-    )
+    var customReminders by mutableStateOf(defaultCustomReminders())
         private set
 
     var showCelebration by mutableStateOf(false)
@@ -552,6 +511,8 @@ class WaterViewModel(
                 reminder
             }
         }
+        dataRepository.savePresetReminders(presetReminders)
+        dataRepository.saveCustomReminders(customReminders)
     }
     
     private fun incrementReminderCompletion() {
@@ -603,6 +564,7 @@ class WaterViewModel(
             isPreset = false
         )
         customReminders = customReminders + newReminder
+        dataRepository.saveCustomReminders(customReminders)
         if (notificationsEnabled && newReminder.isEnabled) {
             reminderScheduler.scheduleDaily(newReminder)
         }
@@ -617,6 +579,7 @@ class WaterViewModel(
     fun deleteCustomReminder(id: String) {
         reminderScheduler.cancel(id)
         customReminders = customReminders.filter { it.id != id }
+        dataRepository.saveCustomReminders(customReminders)
     }
 
     var selectedCategory by mutableStateOf("All")
@@ -630,13 +593,7 @@ class WaterViewModel(
     // When the user enables it, Android 13+ will request POST_NOTIFICATIONS permission via MainActivity.
     var notificationsEnabled by mutableStateOf(false)
         private set
-    var soundEnabled by mutableStateOf(true)
-        private set
-    var vibrationEnabled by mutableStateOf(false)
-        private set
     var quietHoursEnabled by mutableStateOf(false)
-        private set
-    var syncEnabled by mutableStateOf(true)
         private set
 
     init {
@@ -649,6 +606,13 @@ class WaterViewModel(
         reminderRewardClaimed = dataRepository.getReminderRewardClaimed()
         // Load owned shop items from persistence
         loadOwnedShopItems()
+
+        // Notification toggles + reminders must be restored BEFORE syncing
+        // schedules below, or the sync would cancel every alarm on startup.
+        notificationsEnabled = dataRepository.getNotificationsEnabled()
+        quietHoursEnabled = dataRepository.getQuietHoursEnabled()
+        dataRepository.getPresetReminders()?.let { presetReminders = it }
+        dataRepository.getCustomReminders()?.let { customReminders = it }
 
         // Now that reminders + notification toggles are initialized, we can sync schedules safely
         syncReminderSchedules()
@@ -663,6 +627,7 @@ class WaterViewModel(
 
     fun updateNotificationsEnabled(enabled: Boolean) {
         notificationsEnabled = enabled
+        dataRepository.saveNotificationsEnabled(enabled)
         syncReminderSchedules()
 
         analytics.logEvent(
@@ -682,21 +647,11 @@ class WaterViewModel(
         }
     }
 
-    fun toggleSound() {
-        soundEnabled = !soundEnabled
-    }
-
-    fun toggleVibration() {
-        vibrationEnabled = !vibrationEnabled
-    }
-
     fun toggleQuietHours() {
         quietHoursEnabled = !quietHoursEnabled
+        dataRepository.saveQuietHoursEnabled(quietHoursEnabled)
     }
 
-    fun toggleSync() {
-        syncEnabled = !syncEnabled
-    }
 
 
     private fun updateCrashlyticsContext() {

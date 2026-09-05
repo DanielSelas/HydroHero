@@ -2,6 +2,9 @@ package com.danielsela.hydrohero.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -31,6 +34,10 @@ class DataRepository(context: Context) {
         private const val KEY_WATER_ENTRIES = "water_entries"
         private const val KEY_THEME_HUE = "theme_hue"
         private const val KEY_DARK_MODE = "dark_mode"
+        private const val KEY_NOTIFICATIONS_ENABLED = "notifications_enabled"
+        private const val KEY_QUIET_HOURS_ENABLED = "quiet_hours_enabled"
+        private const val KEY_PRESET_REMINDERS = "preset_reminders"
+        private const val KEY_CUSTOM_REMINDERS = "custom_reminders"
 
         private const val DEFAULT_COINS = 800
     }
@@ -116,6 +123,9 @@ class DataRepository(context: Context) {
             .putString(KEY_SELECTED_BACKGROUND, "none")
             .putStringSet(KEY_COMPLETED_REMINDER_IDS, emptySet())
             .remove(KEY_WATER_ENTRIES)
+            .remove(KEY_PRESET_REMINDERS)
+            .remove(KEY_CUSTOM_REMINDERS)
+            .putBoolean(KEY_NOTIFICATIONS_ENABLED, false)
             .apply()
     }
 
@@ -158,6 +168,77 @@ class DataRepository(context: Context) {
 
     fun saveDarkMode(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_DARK_MODE, enabled).apply()
+    }
+
+    // ── Notification settings ───────────────────────────────────────────
+    // These drive whether alarms are scheduled at all, so they have to
+    // survive a restart: otherwise reminders silently stop after the app
+    // is closed once.
+
+    fun getNotificationsEnabled(): Boolean = prefs.getBoolean(KEY_NOTIFICATIONS_ENABLED, false)
+
+    fun saveNotificationsEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_NOTIFICATIONS_ENABLED, enabled).apply()
+    }
+
+    fun getQuietHoursEnabled(): Boolean = prefs.getBoolean(KEY_QUIET_HOURS_ENABLED, false)
+
+    fun saveQuietHoursEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_QUIET_HOURS_ENABLED, enabled).apply()
+    }
+
+    // ── Reminders ───────────────────────────────────────────────────────
+    // Stored as JSON because the title/description are free text; a
+    // delimited format would break on the first comma a user types.
+    // Returns null when nothing was ever saved, so the caller can fall
+    // back to its defaults instead of showing an empty list.
+
+    fun getPresetReminders(): List<Reminder>? =
+        prefs.getString(KEY_PRESET_REMINDERS, null)?.let(::remindersFromJson)
+
+    fun savePresetReminders(reminders: List<Reminder>) {
+        prefs.edit().putString(KEY_PRESET_REMINDERS, remindersToJson(reminders)).apply()
+    }
+
+    fun getCustomReminders(): List<Reminder>? =
+        prefs.getString(KEY_CUSTOM_REMINDERS, null)?.let(::remindersFromJson)
+
+    fun saveCustomReminders(reminders: List<Reminder>) {
+        prefs.edit().putString(KEY_CUSTOM_REMINDERS, remindersToJson(reminders)).apply()
+    }
+
+    private fun remindersToJson(reminders: List<Reminder>): String {
+        val array = JSONArray()
+        reminders.forEach { reminder ->
+            array.put(
+                JSONObject()
+                    .put("id", reminder.id)
+                    .put("title", reminder.title)
+                    .put("description", reminder.description)
+                    .put("time", reminder.time)
+                    .put("isEnabled", reminder.isEnabled)
+                    .put("isPreset", reminder.isPreset)
+            )
+        }
+        return array.toString()
+    }
+
+    /** Returns null on anything malformed so the caller falls back to defaults. */
+    private fun remindersFromJson(raw: String): List<Reminder>? = try {
+        val array = JSONArray(raw)
+        (0 until array.length()).map { index ->
+            val item = array.getJSONObject(index)
+            Reminder(
+                id = item.getString("id"),
+                title = item.getString("title"),
+                description = item.getString("description"),
+                time = item.getString("time"),
+                isEnabled = item.getBoolean("isEnabled"),
+                isPreset = item.getBoolean("isPreset")
+            )
+        }
+    } catch (e: JSONException) {
+        null
     }
 
     fun getCompletedReminderIds(): Set<String> {
