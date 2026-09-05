@@ -18,6 +18,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -806,6 +809,13 @@ fun BottomNavigationBar(navController: NavHostController) {
         items.forEach { screen ->
             val selected = currentRoute == screen.route
             val itemShape = RoundedCornerShape(16.dp)
+            val label = when (screen) {
+                is Screen.Home -> "Home"
+                is Screen.DailyProgress -> "Progress"
+                is Screen.Reminders -> "Reminders"
+                is Screen.Shop -> "Shop"
+                is Screen.Settings -> "Settings"
+            }
 
             Column(
                 modifier = Modifier
@@ -818,7 +828,13 @@ fun BottomNavigationBar(navController: NavHostController) {
                             launchSingleTop = true
                         }
                     }
-                    .padding(vertical = 7.dp),
+                    .padding(vertical = 7.dp)
+                    // One spoken item ("Home, selected") instead of an emoji
+                    // read aloud followed by a separate label.
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = label
+                        this.selected = selected
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -833,13 +849,7 @@ fun BottomNavigationBar(navController: NavHostController) {
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    when (screen) {
-                        is Screen.Home -> "Home"
-                        is Screen.DailyProgress -> "Progress"
-                        is Screen.Reminders -> "Reminders"
-                        is Screen.Shop -> "Shop"
-                        is Screen.Settings -> "Settings"
-                    },
+                    label,
                     fontSize = 10.sp,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                     color = if (selected) HydroPrimaryDeep else HydroInk3

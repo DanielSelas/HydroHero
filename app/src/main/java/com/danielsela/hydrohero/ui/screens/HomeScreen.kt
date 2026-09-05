@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -91,7 +93,10 @@ fun HomeScreen(
                 onClick = onSubscriptionClick,
             )
             Spacer(Modifier.width(4.dp))
-            IconButton(onClick = onSettingsClick) {
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.semantics { contentDescription = "Settings" },
+            ) {
                 Text("⚙️", fontSize = 18.sp)
             }
         }
@@ -397,16 +402,28 @@ private fun CoinPill(value: Int, modifier: Modifier = Modifier) {
 @Composable
 private fun DarkModeButton() {
     val dark = HydroThemeRuntime.dark
+    // 48dp touch target around a 38dp visual circle: anything smaller is
+    // flagged by Play's pre-launch accessibility report.
     Box(
         modifier = Modifier
-            .size(38.dp)
+            .size(48.dp)
             .clip(CircleShape)
-            .background(HydroSurface)
-            .border(width = 1.dp, color = HydroLine, shape = CircleShape)
-            .clickable { HydroThemeRuntime.applyDark(!dark) },
+            .clickable { HydroThemeRuntime.applyDark(!dark) }
+            .semantics {
+                contentDescription = if (dark) "Switch to light mode" else "Switch to dark mode"
+            },
         contentAlignment = Alignment.Center,
     ) {
-        Text(if (dark) "☀️" else "🌙", fontSize = 16.sp)
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(HydroSurface)
+                .border(width = 1.dp, color = HydroLine, shape = CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(if (dark) "☀️" else "🌙", fontSize = 16.sp)
+        }
     }
 }
 
@@ -414,18 +431,29 @@ private fun DarkModeButton() {
 private fun PremiumButton(premium: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(38.dp)
+            .size(48.dp)
             .clip(CircleShape)
-            .background(if (premium) HydroGoldSoft else HydroSurface)
-            .border(
-                width = 1.dp,
-                color = if (premium) HydroGold else HydroLine,
-                shape = CircleShape,
-            )
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics {
+                contentDescription =
+                    if (premium) "Premium active. Manage subscription" else "Go premium"
+            },
         contentAlignment = Alignment.Center,
     ) {
-        Text(if (premium) "👑" else "✨", fontSize = 16.sp)
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(if (premium) HydroGoldSoft else HydroSurface)
+                .border(
+                    width = 1.dp,
+                    color = if (premium) HydroGold else HydroLine,
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(if (premium) "👑" else "✨", fontSize = 16.sp)
+        }
     }
 }
 
@@ -443,7 +471,10 @@ private fun QuickChip(
             .background(HydroSurface)
             .border(1.dp, HydroLine, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 10.dp),
+            .padding(vertical = 12.dp, horizontal = 10.dp)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "Log $label, $ml millilitres"
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(icon, fontSize = 22.sp)
