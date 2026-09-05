@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,12 +8,35 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
 }
 
+// Release signing credentials live in keystore.properties (git-ignored) or, for CI,
+// in the HYDROHERO_STORE_FILE / HYDROHERO_STORE_PASSWORD / HYDROHERO_KEY_ALIAS /
+// HYDROHERO_KEY_PASSWORD environment variables. Never hardcode them here.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+fun signingValue(propertyKey: String, envKey: String): String? =
+    keystoreProperties.getProperty(propertyKey) ?: System.getenv(envKey)
+
+val releaseStoreFile = signingValue("storeFile", "HYDROHERO_STORE_FILE")
+val releaseStorePassword = signingValue("storePassword", "HYDROHERO_STORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "HYDROHERO_KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "HYDROHERO_KEY_PASSWORD")
+val hasReleaseSigning = releaseStoreFile != null &&
+    releaseStorePassword != null &&
+    releaseKeyAlias != null &&
+    releaseKeyPassword != null &&
+    rootProject.file(releaseStoreFile).exists()
+
 android {
-    namespace = "com.example.hydrohero"
+    namespace = "com.danielsela.hydrohero"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.hydrohero"
+        applicationId = "com.danielsela.hydrohero"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -20,13 +45,28 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {

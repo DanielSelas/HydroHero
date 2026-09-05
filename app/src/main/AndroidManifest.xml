@@ -19,7 +19,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HydroHero"
         tools:targetApi="31">
-        <!-- AdMob (TEST app id) -->
+        <!-- AdMob: Google's public TEST app id -->
+        <!-- TODO: replace with production AdMob IDs before release -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
@@ -30,6 +31,17 @@
             android:resource="@xml/gma_ad_services_config"
             tools:replace="android:resource"
             tools:targetApi="34" />
+
+        <!-- Shares the CSV produced by Settings > Export data -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <receiver
             android:name=".notifications.ReminderReceiver"

@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:63983287532:android:78e16e5fcc4501aa5f79c9",
+        "android_client_info": {
+          "package_name": "com.danielsela.hydrohero"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjPCkmXJXwKPQQZW0MBYIUn94mQBGStc4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:63983287532:android:dfec900b0fe566aa5f79c9",
         "android_client_info": {
           "package_name": "com.example.hydrohero"
