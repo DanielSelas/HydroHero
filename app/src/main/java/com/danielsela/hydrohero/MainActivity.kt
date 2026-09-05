@@ -56,6 +56,7 @@ import com.danielsela.hydrohero.ui.screens.AddWaterDialog
 import com.danielsela.hydrohero.ui.screens.AddReminderDialog
 import com.danielsela.hydrohero.ui.screens.DailyProgressScreen
 import com.danielsela.hydrohero.ui.screens.HomeScreen
+import com.danielsela.hydrohero.ui.screens.OnboardingScreen
 import com.danielsela.hydrohero.ui.screens.RemindersScreen
 import com.danielsela.hydrohero.ui.screens.SettingsScreen
 import com.danielsela.hydrohero.ui.screens.ShopScreen
@@ -119,6 +120,19 @@ fun HydroHeroApp() {
             onError = { message -> viewModel.reportBillingError(message) },
         )
     }
+    // Gate the whole app behind the intro on first launch only.
+    var showOnboarding by remember { mutableStateOf(!dataRepository.hasSeenOnboarding()) }
+    if (showOnboarding) {
+        OnboardingScreen(
+            onFinish = {
+                dataRepository.setOnboardingSeen()
+                analytics.logEvent("onboarding_completed")
+                showOnboarding = false
+            }
+        )
+        return
+    }
+
     var showAddWaterDialog by remember { mutableStateOf(false) }
     var showAddReminderDialog by remember { mutableStateOf(false) }
     var showSubscriptionDialog by remember { mutableStateOf(false) }

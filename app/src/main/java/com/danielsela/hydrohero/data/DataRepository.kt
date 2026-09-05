@@ -39,6 +39,7 @@ class DataRepository(context: Context) {
         private const val KEY_PRESET_REMINDERS = "preset_reminders"
         private const val KEY_CUSTOM_REMINDERS = "custom_reminders"
         private const val KEY_DAILY_HISTORY = "daily_history"
+        private const val KEY_ONBOARDING_SEEN = "onboarding_seen"
 
         private const val DEFAULT_COINS = 800
 
@@ -89,6 +90,16 @@ class DataRepository(context: Context) {
             isPremium = prefs.getBoolean(KEY_IS_PREMIUM, false),
             premiumType = prefs.getString(KEY_PREMIUM_TYPE, "none") ?: "none"
         )
+    }
+
+    // ── Onboarding ──────────────────────────────────────────────────────
+    // Not cleared by resetPrototypeState(): "Reset progress" wipes progress,
+    // it should not replay the intro at someone who has already seen it.
+
+    fun hasSeenOnboarding(): Boolean = prefs.getBoolean(KEY_ONBOARDING_SEEN, false)
+
+    fun setOnboardingSeen() {
+        prefs.edit().putBoolean(KEY_ONBOARDING_SEEN, true).apply()
     }
 
     // ── Daily history ───────────────────────────────────────────────────
