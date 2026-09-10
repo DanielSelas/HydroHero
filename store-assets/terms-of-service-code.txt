@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><title>HydroHero - Terms of Service</title><style>body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:760px;margin:40px auto;padding:0 20px;line-height:1.65;color:#202124;font-size:16px}h2{font-size:24px;margin:34px 0 10px;font-weight:600}h3{font-size:19px;margin:26px 0 8px;font-weight:600}h4{font-size:16px;margin:20px 0 6px;font-weight:600}p{margin:0 0 14px}ul{margin:0 0 16px;padding-left:24px}li{margin:6px 0}hr{border:0;border-top:1px solid #dadce0;margin:32px 0}code{background:#f1f3f4;padding:2px 5px;border-radius:4px;font-size:14px}a{color:#1a73e8}</style>
+<h2>Terms of Service for Hydro Hero</h2>
+<p><strong>Last updated: 5 September 2026</strong></p>
+<p>By installing or using Hydro Hero (&quot;the app&quot;), you agree to these terms. The app is provided by Daniel Sela (&quot;we&quot;, &quot;us&quot;). Contact: <strong>danielsela96@gmail.com</strong></p>
+<hr>
+<h3>1. Not medical advice</h3>
+<p>⚠️ Hydro Hero is a habit-tracking and entertainment app. It is <strong>not a medical device</strong> and does not provide medical advice.</p>
+<p>Default and suggested water goals are generic and are not tailored to you. Individual hydration needs vary with body size, activity, climate, medication and medical conditions, and <strong>drinking too much water can be dangerous</strong>. Consult a qualified healthcare professional before making decisions about your fluid intake, and do not rely on this app to manage any medical condition.</p>
+<h3>2. Licence</h3>
+<p>We grant you a personal, non-exclusive, non-transferable, revocable licence to use the app on devices you own or control, for personal, non-commercial purposes.</p>
+<p>You may not reverse engineer, decompile, modify or redistribute the app, or use it in any unlawful way, except where such restriction is prohibited by law.</p>
+<h3>3. Premium purchases</h3>
+<p>The app offers optional Premium products:</p>
+<ul><li><strong>Monthly</strong> — an auto-renewing subscription</li><li><strong>Lifetime</strong> — a one-time purchase</li></ul>
+<p>All purchases are processed and billed by <strong>Google Play</strong>. Prices are shown in your local currency at the point of purchase and may vary by region and over time.</p>
+<p><strong>Subscriptions renew automatically</strong> until cancelled. You can cancel at any time in Google Play → Payments &amp; subscriptions → Subscriptions, or via the link in the app. Cancelling stops future renewals; it does not retroactively refund the current period. Premium remains active until the end of the paid period.</p>
+<p><strong>Refunds</strong> are handled by Google Play under its policies. We cannot issue refunds directly.</p>
+<p>Premium entitlement is determined by Google Play. If Play reports that a purchase was refunded, expired or cancelled, Premium features end accordingly.</p>
+<h3>4. Virtual items</h3>
+<p>Coins, characters, backgrounds and effects are virtual items with <strong>no monetary value</strong>. They cannot be exchanged for money or transferred, and they may be lost if you uninstall the app, use &quot;Reset progress&quot;, or clear the app&#x27;s data. We may change their availability or pricing at any time.</p>
+<h3>5. Advertising</h3>
+<p>The app shows advertising to users who have not purchased Premium. Ads are served by Google AdMob, and we do not control their content. Interactions with advertisers are between you and them.</p>
+<h3>6. Your data</h3>
+<p>Your hydration data is stored on your device only. We do not back it up. If you lose or reset your device, or uninstall the app, that data is gone. Use <strong>Settings → Export data</strong> if you want your own copy.</p>
+<p>Our handling of data is described in the Privacy Policy.</p>
+<h3>7. Availability</h3>
+<p>We may update, change or discontinue the app or any feature at any time, and we do not guarantee uninterrupted or error-free operation. Reminders depend on Android&#x27;s scheduling and on your device&#x27;s battery and notification settings, so delivery at an exact time cannot be guaranteed.</p>
+<h3>8. Disclaimer and liability</h3>
+<p>The app is provided <strong>&quot;as is&quot;</strong>, without warranties of any kind to the fullest extent permitted by law.</p>
+<p>To the fullest extent permitted by law, we are not liable for any indirect, incidental or consequential damages, or for any loss of data, arising from your use of the app. Nothing in these terms limits liability that cannot be limited by law, including liability for death or personal injury caused by negligence, or your statutory consumer rights.</p>
+<h3>9. Termination</h3>
+<p>You may stop using the app at any time by uninstalling it. We may suspend access if these terms are breached.</p>
+<h3>10. Governing law</h3>
+<p>These terms are governed by the laws of the State of Israel, without regard to conflict of law rules. This does not deprive you of any mandatory consumer protections available to you where you live.</p>
+<h3>11. Changes</h3>
+<p>We may update these terms. The &quot;Last updated&quot; date above will change, and continued use of the app after an update constitutes acceptance.</p>

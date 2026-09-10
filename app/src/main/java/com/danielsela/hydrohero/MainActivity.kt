@@ -143,13 +143,11 @@ fun HydroHeroApp() {
 
     val activity = context as? Activity
 
-    // TODO: replace with the PUBLISHED (public) Google Sites URLs before release.
-    // These are private "/edit" links: Play review and real users get a login prompt
-    // or a 404. Publish the site, then paste the public https://sites.google.com/view/... URLs here.
-    val privacyPolicyUrl =
-        "https://sites.google.com/d/1n-Sg5VBSLgKZtTXVFLVuaQVSxW90SoPv/p/1Pu21Hb0X4nGiycH7PnGe3hGKmd38DBOZ/edit"
-    val termsOfServiceUrl =
-        "https://sites.google.com/d/1RK9-bYQa3DolFboLLIT7t5UE88ryS9PE/p/1fw2mlA_WVUxomHGnc2Gx835bBgCYAc83/edit"
+    // Served by GitHub Pages from docs/ in this repo, so the text lives in the
+    // page itself rather than in an embedded frame — automated policy scanners
+    // read it, not just human reviewers.
+    val privacyPolicyUrl = "https://danielselas.github.io/HydroHero/privacy-policy.html"
+    val termsOfServiceUrl = "https://danielselas.github.io/HydroHero/terms-of-service.html"
 
     fun openUrl(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
